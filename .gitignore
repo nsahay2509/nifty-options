@@ -1,0 +1,58 @@
+
+# =====================================================
+# Python
+# =====================================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# virtual environments
+venv/
+.env/
+.venv/
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# macOS / editor junk
+.DS_Store
+.vscode/
+.idea/
+
+# =====================================================
+# Runtime DATA (DO NOT VERSION)
+# =====================================================
+# data/logs/
+# data/results/
+data/spot/
+
+# runtime state files
+# data/open_position.json
+# data/last_state.json
+# data/pnl_state.json
+# data/signal_state.json
+
+# temp / validation datasets
+data/spot_validation/
+
+# =====================================================
+# Secrets / credentials (future-safe)
+# =====================================================
+.env
+secrets.json
+*.key
+
+# =====================================================
+# Shell artifacts
+# =====================================================
+# *.log
+nohup.out
+
+# =====================================================
+# OS temp
+# =====================================================
+*.swp
+*.swo
+*~
