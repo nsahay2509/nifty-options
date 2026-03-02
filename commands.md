@@ -32,3 +32,12 @@ tmux attach -t nifty_eval
 Ctrl + C. # To stop the code
 
 tmux kill-session -t nifty_eval
+
+# ----------------------------
+
+rm -rf data/logs/*
+rm -rf data/results/*
+rm -rf data/spot/*
+rm -f data/*.json
+
+

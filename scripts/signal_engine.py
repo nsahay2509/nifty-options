@@ -1,7 +1,6 @@
 
-
-
 # scripts/signal_engine.py
+
 
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,7 +12,8 @@ from scripts.regime_classifier import classify_regime
 # ---------------- CONFIG ----------------
 STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "signal_state.json"
 
-MIN_GAP_MINUTES = 20   # prevent over-trading
+MIN_GAP_MINUTES = 20      # prevent over-trading
+REGIME_PERSISTENCE = 3    # candles required to confirm regime
 
 
 # ---------------- STATE ----------------
@@ -22,15 +22,24 @@ def load_state():
         return {
             "last_regime": "WAIT",
             "last_signal_time": None,
+            "candidate_regime": "WAIT",
+            "candidate_count": 0,
+            "confirmed_regime": "WAIT",
         }
 
     try:
-        return json.loads(STATE_FILE.read_text())
-    except:
-        return {
-            "last_regime": "WAIT",
-            "last_signal_time": None,
-        }
+        state = json.loads(STATE_FILE.read_text())
+    except Exception:
+        state = {}
+
+    # backward compatibility (important)
+    state.setdefault("last_regime", "WAIT")
+    state.setdefault("last_signal_time", None)
+    state.setdefault("candidate_regime", "WAIT")
+    state.setdefault("candidate_count", 0)
+    state.setdefault("confirmed_regime", "WAIT")
+
+    return state
 
 
 def save_state(state):
@@ -43,38 +52,76 @@ def generate_signal(history):
 
     state = load_state()
 
-    prev_regime = state["last_regime"]
-    current_regime = classify_regime(history)
+    raw_regime = classify_regime(history)
+    confirmed_regime = state["confirmed_regime"]
+
+    candidate = state["candidate_regime"]
+    count = state["candidate_count"]
 
     now = datetime.now()
 
-    # ---------- transition filter ----------
+    # ==================================================
+    # REGIME PERSISTENCE LOGIC
+    # ==================================================
+    if raw_regime == candidate:
+        count += 1
+    else:
+        candidate = raw_regime
+        count = 1
+
+    new_confirmed = confirmed_regime
+
+    # confirm regime only after persistence
+    if count >= REGIME_PERSISTENCE:
+        new_confirmed = candidate
+
+    # ==================================================
+    # SIGNAL GENERATION
+    # ==================================================
     signal = None
 
-    if current_regime != "WAIT" and current_regime != prev_regime:
+    if (
+        new_confirmed != confirmed_regime
+        and new_confirmed != "WAIT"
+    ):
 
-        # ---------- cooldown filter ----------
         last_time = state["last_signal_time"]
 
         if last_time:
             last_time = datetime.fromisoformat(last_time)
 
-            if now - last_time < timedelta(minutes=MIN_GAP_MINUTES):
-                signal = None
-            else:
-                signal = current_regime
+            if now - last_time >= timedelta(minutes=MIN_GAP_MINUTES):
+                signal = new_confirmed
         else:
-            signal = current_regime
+            signal = new_confirmed
 
-    # ---------- update state ----------
-    state["last_regime"] = current_regime
+    # ==================================================
+    # DIAGNOSTIC LOGGING
+    # ==================================================
+    print(
+        f"[SIGNAL_ENGINE] "
+        f"raw={raw_regime} | "
+        f"candidate={candidate}({count}) | "
+        f"confirmed={new_confirmed} | "
+        f"signal={signal}"
+    )
+
+    # ==================================================
+    # SAVE STATE
+    # ==================================================
+    state.update({
+        "last_regime": raw_regime,
+        "candidate_regime": candidate,
+        "candidate_count": count,
+        "confirmed_regime": new_confirmed,
+    })
 
     if signal:
         state["last_signal_time"] = now.isoformat()
 
     save_state(state)
 
-    return signal, current_regime
+    return signal, new_confirmed
 
 
 # convenience runner
