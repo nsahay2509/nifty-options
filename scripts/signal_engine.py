@@ -5,6 +5,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
+from zoneinfo import ZoneInfo
 
 from scripts.regime_classifier import classify_regime
 
@@ -58,7 +59,7 @@ def generate_signal(history):
     candidate = state["candidate_regime"]
     count = state["candidate_count"]
 
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
 
     # ==================================================
     # REGIME PERSISTENCE LOGIC

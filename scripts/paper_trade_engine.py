@@ -168,7 +168,7 @@ class PaperTradeEngine:
         signal, regime = generate_signal(history)
 
         # ⭐ visibility
-        logger.info(f"REGIME_CHECK | regime={regime}")
+        logger.info(f"SIGNAL_CHECK | signal={signal} regime={regime}")
 
         # ==================================================
         # STATE MACHINE
@@ -176,8 +176,8 @@ class PaperTradeEngine:
 
         if self.state == "FLAT":
 
-            if regime in ("SELL_STRADDLE", "SELL_PE", "SELL_CE") and self.can_open_new(now):
-                self.enter_position(now, regime, history)
+            if signal in ("SELL_STRADDLE", "SELL_PE", "SELL_CE") and self.can_open_new(now):
+                self.enter_position(now, signal, history)
 
             return
 
