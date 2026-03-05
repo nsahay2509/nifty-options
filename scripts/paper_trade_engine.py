@@ -26,7 +26,7 @@ NO_NEW_ENTRY_AFTER = dtime(15, 15)
 FORCE_EXIT_TIME = dtime(15, 25)
 
 WINDOW = 15
-COOLDOWN_MINUTES = 10
+COOLDOWN_MINUTES = 5 # changed it to 5 as we are using regime comfirmation three consecutive time. Earlier it was 10 minutes which is too long for our use case.
 LOTS = 1
 
 

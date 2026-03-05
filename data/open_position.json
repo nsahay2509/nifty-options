@@ -1,0 +1,16 @@
+{
+  "status": "CLOSED",
+  "trade_id": "20260305_133305",
+  "regime": "SELL_PE",
+  "strike": 24650,
+  "expiry": "2026-03-10",
+  "entry_time": "2026-03-05 13:33:05",
+  "legs": [
+    {
+      "security_id": 45516,
+      "entry_price": 215.4,
+      "lots": 1,
+      "type": "PE"
+    }
+  ]
+}
