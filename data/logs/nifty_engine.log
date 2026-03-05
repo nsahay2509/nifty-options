@@ -16983,3 +16983,1178 @@
 2026-03-05 14:19:05 | evaluator | CYCLE END
 2026-03-05 14:19:05 | evaluator | ------------------------------------------------------------
 2026-03-05 14:19:05 | evaluator | 
+2026-03-05 14:20:05 | evaluator | 
+2026-03-05 14:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:20:05 | evaluator | CYCLE START
+2026-03-05 14:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:20:05 | evaluator | STEP 1: updater start
+2026-03-05 14:20:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:19:00
+2026-03-05 14:20:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:20:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:20:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:20:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:20:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:20:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:20:05 | evaluator | CYCLE END
+2026-03-05 14:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:20:05 | evaluator | 
+2026-03-05 14:21:05 | evaluator | 
+2026-03-05 14:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:21:05 | evaluator | CYCLE START
+2026-03-05 14:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:21:05 | evaluator | STEP 1: updater start
+2026-03-05 14:21:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:20:00
+2026-03-05 14:21:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:21:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:21:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:21:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:21:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:21:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:21:05 | evaluator | CYCLE END
+2026-03-05 14:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:21:05 | evaluator | 
+2026-03-05 14:22:05 | evaluator | 
+2026-03-05 14:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:22:05 | evaluator | CYCLE START
+2026-03-05 14:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:22:05 | evaluator | STEP 1: updater start
+2026-03-05 14:22:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:21:00
+2026-03-05 14:22:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:22:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:22:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:22:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:22:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:22:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:22:05 | evaluator | CYCLE END
+2026-03-05 14:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:22:05 | evaluator | 
+2026-03-05 14:23:05 | evaluator | 
+2026-03-05 14:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:23:05 | evaluator | CYCLE START
+2026-03-05 14:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:23:05 | evaluator | STEP 1: updater start
+2026-03-05 14:23:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:22:00
+2026-03-05 14:23:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:23:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:23:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:23:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:23:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:23:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:23:05 | evaluator | CYCLE END
+2026-03-05 14:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:23:05 | evaluator | 
+2026-03-05 14:24:05 | evaluator | 
+2026-03-05 14:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:24:05 | evaluator | CYCLE START
+2026-03-05 14:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:24:05 | evaluator | STEP 1: updater start
+2026-03-05 14:24:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:23:00
+2026-03-05 14:24:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:24:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:24:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:24:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:24:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:24:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:24:05 | evaluator | CYCLE END
+2026-03-05 14:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:24:05 | evaluator | 
+2026-03-05 14:25:05 | evaluator | 
+2026-03-05 14:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:25:05 | evaluator | CYCLE START
+2026-03-05 14:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:25:05 | evaluator | STEP 1: updater start
+2026-03-05 14:25:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:24:00
+2026-03-05 14:25:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:25:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:25:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:25:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:25:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:25:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:25:05 | evaluator | CYCLE END
+2026-03-05 14:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:25:05 | evaluator | 
+2026-03-05 14:26:05 | evaluator | 
+2026-03-05 14:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:26:05 | evaluator | CYCLE START
+2026-03-05 14:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:26:05 | evaluator | STEP 1: updater start
+2026-03-05 14:26:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:25:00
+2026-03-05 14:26:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:26:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:26:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 14:26:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:26:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:26:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:26:05 | evaluator | CYCLE END
+2026-03-05 14:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:26:05 | evaluator | 
+2026-03-05 14:27:05 | evaluator | 
+2026-03-05 14:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:27:05 | evaluator | CYCLE START
+2026-03-05 14:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:27:05 | evaluator | STEP 1: updater start
+2026-03-05 14:27:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:26:00
+2026-03-05 14:27:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:27:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:27:05 | paper_trade | SIGNAL_CHECK | signal=SELL_PE regime=SELL_PE
+2026-03-05 14:27:06 | paper_trade | ENTRY | SELL_PE | spot=24598.30 strike=24600 exp=2026-03-10 ce_id=None pe_id=45514 lots=1
+2026-03-05 14:27:06 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:27:06 | evaluator | STEP 3: mtm start
+2026-03-05 14:27:06 | paper_mtm | ENTRY | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=0.00 Total=790.00
+2026-03-05 14:27:06 | evaluator | STEP 3: mtm end
+2026-03-05 14:27:06 | evaluator | ------------------------------------------------------------
+2026-03-05 14:27:06 | evaluator | CYCLE END
+2026-03-05 14:27:06 | evaluator | ------------------------------------------------------------
+2026-03-05 14:27:06 | evaluator | 
+2026-03-05 14:28:05 | evaluator | 
+2026-03-05 14:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:28:05 | evaluator | CYCLE START
+2026-03-05 14:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:28:05 | evaluator | STEP 1: updater start
+2026-03-05 14:28:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:27:00
+2026-03-05 14:28:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:28:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:28:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:28:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:28:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:28:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-72.50 Total=717.50
+2026-03-05 14:28:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:28:05 | evaluator | CYCLE END
+2026-03-05 14:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:28:05 | evaluator | 
+2026-03-05 14:29:05 | evaluator | 
+2026-03-05 14:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:29:05 | evaluator | CYCLE START
+2026-03-05 14:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:29:05 | evaluator | STEP 1: updater start
+2026-03-05 14:29:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:28:00
+2026-03-05 14:29:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:29:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:29:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:29:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:29:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:29:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=122.50 Total=912.50
+2026-03-05 14:29:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:29:05 | evaluator | CYCLE END
+2026-03-05 14:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:29:05 | evaluator | 
+2026-03-05 14:30:05 | evaluator | 
+2026-03-05 14:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:30:05 | evaluator | CYCLE START
+2026-03-05 14:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:30:05 | evaluator | STEP 1: updater start
+2026-03-05 14:30:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:29:00
+2026-03-05 14:30:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:30:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:30:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:30:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:30:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:30:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-120.00 Total=670.00
+2026-03-05 14:30:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:30:05 | evaluator | CYCLE END
+2026-03-05 14:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:30:05 | evaluator | 
+2026-03-05 14:31:05 | evaluator | 
+2026-03-05 14:31:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:31:05 | evaluator | CYCLE START
+2026-03-05 14:31:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:31:05 | evaluator | STEP 1: updater start
+2026-03-05 14:31:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:30:00
+2026-03-05 14:31:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:31:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:31:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:31:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:31:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:31:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-232.50 Total=557.50
+2026-03-05 14:31:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:31:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:31:05 | evaluator | CYCLE END
+2026-03-05 14:31:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:31:05 | evaluator | 
+2026-03-05 14:32:05 | evaluator | 
+2026-03-05 14:32:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:32:05 | evaluator | CYCLE START
+2026-03-05 14:32:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:32:05 | evaluator | STEP 1: updater start
+2026-03-05 14:32:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:31:00
+2026-03-05 14:32:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:32:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:32:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:32:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:32:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:32:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-335.00 Total=455.00
+2026-03-05 14:32:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:32:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:32:05 | evaluator | CYCLE END
+2026-03-05 14:32:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:32:05 | evaluator | 
+2026-03-05 14:33:05 | evaluator | 
+2026-03-05 14:33:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:33:05 | evaluator | CYCLE START
+2026-03-05 14:33:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:33:05 | evaluator | STEP 1: updater start
+2026-03-05 14:33:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:32:00
+2026-03-05 14:33:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:33:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:33:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:33:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:33:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:33:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-332.50 Total=457.50
+2026-03-05 14:33:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:33:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:33:05 | evaluator | CYCLE END
+2026-03-05 14:33:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:33:05 | evaluator | 
+2026-03-05 14:34:05 | evaluator | 
+2026-03-05 14:34:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:34:05 | evaluator | CYCLE START
+2026-03-05 14:34:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:34:05 | evaluator | STEP 1: updater start
+2026-03-05 14:34:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:33:00
+2026-03-05 14:34:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:34:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:34:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:34:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:34:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:34:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-267.50 Total=522.50
+2026-03-05 14:34:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:34:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:34:05 | evaluator | CYCLE END
+2026-03-05 14:34:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:34:05 | evaluator | 
+2026-03-05 14:35:05 | evaluator | 
+2026-03-05 14:35:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:35:05 | evaluator | CYCLE START
+2026-03-05 14:35:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:35:05 | evaluator | STEP 1: updater start
+2026-03-05 14:35:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:34:00
+2026-03-05 14:35:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:35:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:35:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:35:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:35:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:35:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-285.00 Total=505.00
+2026-03-05 14:35:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:35:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:35:05 | evaluator | CYCLE END
+2026-03-05 14:35:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:35:05 | evaluator | 
+2026-03-05 14:36:05 | evaluator | 
+2026-03-05 14:36:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:36:05 | evaluator | CYCLE START
+2026-03-05 14:36:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:36:05 | evaluator | STEP 1: updater start
+2026-03-05 14:36:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:35:00
+2026-03-05 14:36:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:36:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:36:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:36:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:36:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:36:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=-180.00 Total=610.00
+2026-03-05 14:36:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:36:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:36:05 | evaluator | CYCLE END
+2026-03-05 14:36:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:36:05 | evaluator | 
+2026-03-05 14:37:05 | evaluator | 
+2026-03-05 14:37:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:37:05 | evaluator | CYCLE START
+2026-03-05 14:37:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:37:05 | evaluator | STEP 1: updater start
+2026-03-05 14:37:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:36:00
+2026-03-05 14:37:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:37:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:37:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:37:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:37:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:37:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=602.50 Total=1392.50
+2026-03-05 14:37:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:37:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:37:05 | evaluator | CYCLE END
+2026-03-05 14:37:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:37:05 | evaluator | 
+2026-03-05 14:38:05 | evaluator | 
+2026-03-05 14:38:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:38:05 | evaluator | CYCLE START
+2026-03-05 14:38:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:38:05 | evaluator | STEP 1: updater start
+2026-03-05 14:38:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:37:00
+2026-03-05 14:38:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:38:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:38:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:38:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:38:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:38:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=1335.00 Total=2125.00
+2026-03-05 14:38:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:38:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:38:05 | evaluator | CYCLE END
+2026-03-05 14:38:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:38:05 | evaluator | 
+2026-03-05 14:39:05 | evaluator | 
+2026-03-05 14:39:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:39:05 | evaluator | CYCLE START
+2026-03-05 14:39:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:39:05 | evaluator | STEP 1: updater start
+2026-03-05 14:39:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:38:00
+2026-03-05 14:39:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:39:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:39:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:39:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:39:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:39:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=1475.00 Total=2265.00
+2026-03-05 14:39:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:39:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:39:05 | evaluator | CYCLE END
+2026-03-05 14:39:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:39:05 | evaluator | 
+2026-03-05 14:40:05 | evaluator | 
+2026-03-05 14:40:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:40:05 | evaluator | CYCLE START
+2026-03-05 14:40:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:40:05 | evaluator | STEP 1: updater start
+2026-03-05 14:40:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:39:00
+2026-03-05 14:40:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:40:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:40:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:40:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:40:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:40:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=1915.00 Total=2705.00
+2026-03-05 14:40:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:40:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:40:05 | evaluator | CYCLE END
+2026-03-05 14:40:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:40:05 | evaluator | 
+2026-03-05 14:41:05 | evaluator | 
+2026-03-05 14:41:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:41:05 | evaluator | CYCLE START
+2026-03-05 14:41:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:41:05 | evaluator | STEP 1: updater start
+2026-03-05 14:41:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:40:00
+2026-03-05 14:41:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:41:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:41:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:41:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:41:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:41:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2967.50 Total=3757.50
+2026-03-05 14:41:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:41:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:41:05 | evaluator | CYCLE END
+2026-03-05 14:41:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:41:05 | evaluator | 
+2026-03-05 14:42:05 | evaluator | 
+2026-03-05 14:42:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:42:05 | evaluator | CYCLE START
+2026-03-05 14:42:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:42:05 | evaluator | STEP 1: updater start
+2026-03-05 14:42:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:41:00
+2026-03-05 14:42:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:42:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:42:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:42:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:42:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:42:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2822.50 Total=3612.50
+2026-03-05 14:42:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:42:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:42:05 | evaluator | CYCLE END
+2026-03-05 14:42:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:42:05 | evaluator | 
+2026-03-05 14:43:05 | evaluator | 
+2026-03-05 14:43:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:43:05 | evaluator | CYCLE START
+2026-03-05 14:43:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:43:05 | evaluator | STEP 1: updater start
+2026-03-05 14:43:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:42:00
+2026-03-05 14:43:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:43:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:43:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:43:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:43:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:43:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2625.00 Total=3415.00
+2026-03-05 14:43:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:43:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:43:05 | evaluator | CYCLE END
+2026-03-05 14:43:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:43:05 | evaluator | 
+2026-03-05 14:44:05 | evaluator | 
+2026-03-05 14:44:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:44:05 | evaluator | CYCLE START
+2026-03-05 14:44:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:44:05 | evaluator | STEP 1: updater start
+2026-03-05 14:44:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:43:00
+2026-03-05 14:44:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:44:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:44:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:44:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:44:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:44:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2642.50 Total=3432.50
+2026-03-05 14:44:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:44:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:44:05 | evaluator | CYCLE END
+2026-03-05 14:44:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:44:05 | evaluator | 
+2026-03-05 14:45:05 | evaluator | 
+2026-03-05 14:45:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:45:05 | evaluator | CYCLE START
+2026-03-05 14:45:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:45:05 | evaluator | STEP 1: updater start
+2026-03-05 14:45:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:44:00
+2026-03-05 14:45:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:45:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:45:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:45:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:45:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:45:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2502.50 Total=3292.50
+2026-03-05 14:45:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:45:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:45:05 | evaluator | CYCLE END
+2026-03-05 14:45:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:45:05 | evaluator | 
+2026-03-05 14:46:05 | evaluator | 
+2026-03-05 14:46:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:46:05 | evaluator | CYCLE START
+2026-03-05 14:46:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:46:05 | evaluator | STEP 1: updater start
+2026-03-05 14:46:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:45:00
+2026-03-05 14:46:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:46:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:46:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:46:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:46:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:46:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3190.00 Total=3980.00
+2026-03-05 14:46:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:46:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:46:05 | evaluator | CYCLE END
+2026-03-05 14:46:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:46:05 | evaluator | 
+2026-03-05 14:47:05 | evaluator | 
+2026-03-05 14:47:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:47:05 | evaluator | CYCLE START
+2026-03-05 14:47:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:47:05 | evaluator | STEP 1: updater start
+2026-03-05 14:47:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:46:00
+2026-03-05 14:47:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:47:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:47:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:47:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:47:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:47:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2920.00 Total=3710.00
+2026-03-05 14:47:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:47:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:47:05 | evaluator | CYCLE END
+2026-03-05 14:47:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:47:05 | evaluator | 
+2026-03-05 14:48:05 | evaluator | 
+2026-03-05 14:48:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:48:05 | evaluator | CYCLE START
+2026-03-05 14:48:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:48:05 | evaluator | STEP 1: updater start
+2026-03-05 14:48:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:47:00
+2026-03-05 14:48:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:48:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:48:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:48:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:48:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:48:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2582.50 Total=3372.50
+2026-03-05 14:48:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:48:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:48:05 | evaluator | CYCLE END
+2026-03-05 14:48:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:48:05 | evaluator | 
+2026-03-05 14:49:05 | evaluator | 
+2026-03-05 14:49:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:49:05 | evaluator | CYCLE START
+2026-03-05 14:49:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:49:05 | evaluator | STEP 1: updater start
+2026-03-05 14:49:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:48:00
+2026-03-05 14:49:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:49:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:49:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:49:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:49:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:49:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=2980.00 Total=3770.00
+2026-03-05 14:49:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:49:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:49:05 | evaluator | CYCLE END
+2026-03-05 14:49:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:49:05 | evaluator | 
+2026-03-05 14:50:05 | evaluator | 
+2026-03-05 14:50:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:50:05 | evaluator | CYCLE START
+2026-03-05 14:50:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:50:05 | evaluator | STEP 1: updater start
+2026-03-05 14:50:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:49:00
+2026-03-05 14:50:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:50:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:50:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:50:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:50:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:50:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3102.50 Total=3892.50
+2026-03-05 14:50:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:50:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:50:05 | evaluator | CYCLE END
+2026-03-05 14:50:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:50:05 | evaluator | 
+2026-03-05 14:51:05 | evaluator | 
+2026-03-05 14:51:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:51:05 | evaluator | CYCLE START
+2026-03-05 14:51:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:51:05 | evaluator | STEP 1: updater start
+2026-03-05 14:51:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:50:00
+2026-03-05 14:51:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:51:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:51:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:51:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:51:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:51:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3480.00 Total=4270.00
+2026-03-05 14:51:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:51:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:51:05 | evaluator | CYCLE END
+2026-03-05 14:51:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:51:05 | evaluator | 
+2026-03-05 14:52:05 | evaluator | 
+2026-03-05 14:52:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:52:05 | evaluator | CYCLE START
+2026-03-05 14:52:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:52:05 | evaluator | STEP 1: updater start
+2026-03-05 14:52:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:51:00
+2026-03-05 14:52:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:52:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:52:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:52:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:52:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:52:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3697.50 Total=4487.50
+2026-03-05 14:52:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:52:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:52:05 | evaluator | CYCLE END
+2026-03-05 14:52:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:52:05 | evaluator | 
+2026-03-05 14:53:05 | evaluator | 
+2026-03-05 14:53:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:53:05 | evaluator | CYCLE START
+2026-03-05 14:53:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:53:05 | evaluator | STEP 1: updater start
+2026-03-05 14:53:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:52:00
+2026-03-05 14:53:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:53:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:53:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:53:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:53:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:53:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3642.50 Total=4432.50
+2026-03-05 14:53:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:53:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:53:05 | evaluator | CYCLE END
+2026-03-05 14:53:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:53:05 | evaluator | 
+2026-03-05 14:54:05 | evaluator | 
+2026-03-05 14:54:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:54:05 | evaluator | CYCLE START
+2026-03-05 14:54:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:54:05 | evaluator | STEP 1: updater start
+2026-03-05 14:54:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:53:00
+2026-03-05 14:54:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:54:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:54:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:54:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:54:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:54:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3900.00 Total=4690.00
+2026-03-05 14:54:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:54:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:54:05 | evaluator | CYCLE END
+2026-03-05 14:54:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:54:05 | evaluator | 
+2026-03-05 14:55:05 | evaluator | 
+2026-03-05 14:55:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:55:05 | evaluator | CYCLE START
+2026-03-05 14:55:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:55:05 | evaluator | STEP 1: updater start
+2026-03-05 14:55:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:54:00
+2026-03-05 14:55:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:55:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:55:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:55:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:55:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:55:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4277.50 Total=5067.50
+2026-03-05 14:55:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:55:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:55:05 | evaluator | CYCLE END
+2026-03-05 14:55:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:55:05 | evaluator | 
+2026-03-05 14:56:05 | evaluator | 
+2026-03-05 14:56:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:56:05 | evaluator | CYCLE START
+2026-03-05 14:56:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:56:05 | evaluator | STEP 1: updater start
+2026-03-05 14:56:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:55:00
+2026-03-05 14:56:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:56:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:56:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:56:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:56:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:56:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3897.50 Total=4687.50
+2026-03-05 14:56:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:56:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:56:05 | evaluator | CYCLE END
+2026-03-05 14:56:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:56:05 | evaluator | 
+2026-03-05 14:57:05 | evaluator | 
+2026-03-05 14:57:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:57:05 | evaluator | CYCLE START
+2026-03-05 14:57:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:57:05 | evaluator | STEP 1: updater start
+2026-03-05 14:57:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:56:00
+2026-03-05 14:57:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:57:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:57:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:57:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:57:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:57:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4037.50 Total=4827.50
+2026-03-05 14:57:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:57:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:57:05 | evaluator | CYCLE END
+2026-03-05 14:57:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:57:05 | evaluator | 
+2026-03-05 14:58:05 | evaluator | 
+2026-03-05 14:58:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:58:05 | evaluator | CYCLE START
+2026-03-05 14:58:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:58:05 | evaluator | STEP 1: updater start
+2026-03-05 14:58:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:57:00
+2026-03-05 14:58:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:58:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:58:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:58:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:58:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:58:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4205.00 Total=4995.00
+2026-03-05 14:58:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:58:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:58:05 | evaluator | CYCLE END
+2026-03-05 14:58:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:58:05 | evaluator | 
+2026-03-05 14:59:05 | evaluator | 
+2026-03-05 14:59:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:59:05 | evaluator | CYCLE START
+2026-03-05 14:59:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:59:05 | evaluator | STEP 1: updater start
+2026-03-05 14:59:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:58:00
+2026-03-05 14:59:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 14:59:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 14:59:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 14:59:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 14:59:05 | evaluator | STEP 3: mtm start
+2026-03-05 14:59:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4127.50 Total=4917.50
+2026-03-05 14:59:05 | evaluator | STEP 3: mtm end
+2026-03-05 14:59:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:59:05 | evaluator | CYCLE END
+2026-03-05 14:59:05 | evaluator | ------------------------------------------------------------
+2026-03-05 14:59:05 | evaluator | 
+2026-03-05 15:00:05 | evaluator | 
+2026-03-05 15:00:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:00:05 | evaluator | CYCLE START
+2026-03-05 15:00:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:00:05 | evaluator | STEP 1: updater start
+2026-03-05 15:00:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 14:59:00
+2026-03-05 15:00:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:00:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:00:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:00:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:00:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:00:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4490.00 Total=5280.00
+2026-03-05 15:00:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:00:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:00:05 | evaluator | CYCLE END
+2026-03-05 15:00:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:00:05 | evaluator | 
+2026-03-05 15:01:05 | evaluator | 
+2026-03-05 15:01:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:01:05 | evaluator | CYCLE START
+2026-03-05 15:01:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:01:05 | evaluator | STEP 1: updater start
+2026-03-05 15:01:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:00:00
+2026-03-05 15:01:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:01:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:01:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:01:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:01:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:01:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=4172.50 Total=4962.50
+2026-03-05 15:01:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:01:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:01:05 | evaluator | CYCLE END
+2026-03-05 15:01:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:01:05 | evaluator | 
+2026-03-05 15:02:05 | evaluator | 
+2026-03-05 15:02:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:02:05 | evaluator | CYCLE START
+2026-03-05 15:02:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:02:05 | evaluator | STEP 1: updater start
+2026-03-05 15:02:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:01:00
+2026-03-05 15:02:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:02:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:02:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:02:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:02:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:02:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3795.00 Total=4585.00
+2026-03-05 15:02:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:02:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:02:05 | evaluator | CYCLE END
+2026-03-05 15:02:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:02:05 | evaluator | 
+2026-03-05 15:03:05 | evaluator | 
+2026-03-05 15:03:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:03:05 | evaluator | CYCLE START
+2026-03-05 15:03:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:03:05 | evaluator | STEP 1: updater start
+2026-03-05 15:03:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:02:00
+2026-03-05 15:03:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:03:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:03:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:03:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:03:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:03:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3532.50 Total=4322.50
+2026-03-05 15:03:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:03:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:03:05 | evaluator | CYCLE END
+2026-03-05 15:03:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:03:05 | evaluator | 
+2026-03-05 15:04:05 | evaluator | 
+2026-03-05 15:04:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:04:05 | evaluator | CYCLE START
+2026-03-05 15:04:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:04:05 | evaluator | STEP 1: updater start
+2026-03-05 15:04:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:03:00
+2026-03-05 15:04:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:04:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:04:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:04:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:04:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:04:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3735.00 Total=4525.00
+2026-03-05 15:04:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:04:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:04:05 | evaluator | CYCLE END
+2026-03-05 15:04:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:04:05 | evaluator | 
+2026-03-05 15:05:05 | evaluator | 
+2026-03-05 15:05:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:05:05 | evaluator | CYCLE START
+2026-03-05 15:05:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:05:05 | evaluator | STEP 1: updater start
+2026-03-05 15:05:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:04:00
+2026-03-05 15:05:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:05:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:05:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:05:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:05:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:05:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3592.50 Total=4382.50
+2026-03-05 15:05:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:05:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:05:05 | evaluator | CYCLE END
+2026-03-05 15:05:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:05:05 | evaluator | 
+2026-03-05 15:06:05 | evaluator | 
+2026-03-05 15:06:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:06:05 | evaluator | CYCLE START
+2026-03-05 15:06:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:06:05 | evaluator | STEP 1: updater start
+2026-03-05 15:06:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:05:00
+2026-03-05 15:06:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:06:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:06:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-05 15:06:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:06:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:06:05 | paper_mtm | OPEN | SELL_PE | strike=24600 exp=2026-03-10 | Realised=790.00 Unrealised=3582.50 Total=4372.50
+2026-03-05 15:06:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:06:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:06:05 | evaluator | CYCLE END
+2026-03-05 15:06:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:06:05 | evaluator | 
+2026-03-05 15:07:05 | evaluator | 
+2026-03-05 15:07:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:07:05 | evaluator | CYCLE START
+2026-03-05 15:07:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:07:05 | evaluator | STEP 1: updater start
+2026-03-05 15:07:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:06:00
+2026-03-05 15:07:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:07:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:07:05 | paper_trade | SIGNAL_CHECK | signal=SELL_STRADDLE regime=SELL_STRADDLE
+2026-03-05 15:07:05 | paper_trade | EXIT | SELL_PE | strike=24600 exp=2026-03-10 lots=1 reason=REGIME_CHANGE SELL_PE->SELL_STRADDLE
+2026-03-05 15:07:05 | paper_trade | Entering cooldown until 15:12:05
+2026-03-05 15:07:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:07:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:07:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:07:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:07:05 | evaluator | CYCLE END
+2026-03-05 15:07:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:07:05 | evaluator | 
+2026-03-05 15:08:05 | evaluator | 
+2026-03-05 15:08:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:08:05 | evaluator | CYCLE START
+2026-03-05 15:08:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:08:05 | evaluator | STEP 1: updater start
+2026-03-05 15:08:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:07:00
+2026-03-05 15:08:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:08:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:08:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:08:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:08:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:08:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:08:05 | evaluator | CYCLE END
+2026-03-05 15:08:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:08:05 | evaluator | 
+2026-03-05 15:09:05 | evaluator | 
+2026-03-05 15:09:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:09:05 | evaluator | CYCLE START
+2026-03-05 15:09:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:09:05 | evaluator | STEP 1: updater start
+2026-03-05 15:09:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:08:00
+2026-03-05 15:09:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:09:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:09:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:09:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:09:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:09:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:09:05 | evaluator | CYCLE END
+2026-03-05 15:09:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:09:05 | evaluator | 
+2026-03-05 15:10:05 | evaluator | 
+2026-03-05 15:10:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:10:05 | evaluator | CYCLE START
+2026-03-05 15:10:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:10:05 | evaluator | STEP 1: updater start
+2026-03-05 15:10:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:09:00
+2026-03-05 15:10:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:10:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:10:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:10:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:10:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:10:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:10:05 | evaluator | CYCLE END
+2026-03-05 15:10:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:10:05 | evaluator | 
+2026-03-05 15:11:05 | evaluator | 
+2026-03-05 15:11:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:11:05 | evaluator | CYCLE START
+2026-03-05 15:11:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:11:05 | evaluator | STEP 1: updater start
+2026-03-05 15:11:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:10:00
+2026-03-05 15:11:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:11:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:11:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:11:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:11:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:11:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:11:05 | evaluator | CYCLE END
+2026-03-05 15:11:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:11:05 | evaluator | 
+2026-03-05 15:12:05 | evaluator | 
+2026-03-05 15:12:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:12:05 | evaluator | CYCLE START
+2026-03-05 15:12:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:12:05 | evaluator | STEP 1: updater start
+2026-03-05 15:12:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:11:00
+2026-03-05 15:12:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:12:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:12:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:12:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:12:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:12:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:12:05 | evaluator | CYCLE END
+2026-03-05 15:12:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:12:05 | evaluator | 
+2026-03-05 15:13:05 | evaluator | 
+2026-03-05 15:13:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:13:05 | evaluator | CYCLE START
+2026-03-05 15:13:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:13:05 | evaluator | STEP 1: updater start
+2026-03-05 15:13:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:12:00
+2026-03-05 15:13:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:13:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:13:05 | paper_trade | Cooldown finished → FLAT
+2026-03-05 15:13:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_STRADDLE
+2026-03-05 15:13:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:13:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:13:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:13:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:13:05 | evaluator | CYCLE END
+2026-03-05 15:13:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:13:05 | evaluator | 
+2026-03-05 15:14:05 | evaluator | 
+2026-03-05 15:14:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:14:05 | evaluator | CYCLE START
+2026-03-05 15:14:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:14:05 | evaluator | STEP 1: updater start
+2026-03-05 15:14:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:13:00
+2026-03-05 15:14:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:14:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:14:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_STRADDLE
+2026-03-05 15:14:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:14:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:14:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:14:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:14:05 | evaluator | CYCLE END
+2026-03-05 15:14:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:14:05 | evaluator | 
+2026-03-05 15:15:05 | evaluator | 
+2026-03-05 15:15:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:15:05 | evaluator | CYCLE START
+2026-03-05 15:15:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:15:05 | evaluator | STEP 1: updater start
+2026-03-05 15:15:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:14:00
+2026-03-05 15:15:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:15:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:15:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:15:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:15:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:15:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:15:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:15:05 | evaluator | CYCLE END
+2026-03-05 15:15:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:15:05 | evaluator | 
+2026-03-05 15:16:05 | evaluator | 
+2026-03-05 15:16:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:16:05 | evaluator | CYCLE START
+2026-03-05 15:16:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:16:05 | evaluator | STEP 1: updater start
+2026-03-05 15:16:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:15:00
+2026-03-05 15:16:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:16:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:16:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:16:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:16:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:16:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:16:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:16:05 | evaluator | CYCLE END
+2026-03-05 15:16:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:16:05 | evaluator | 
+2026-03-05 15:17:05 | evaluator | 
+2026-03-05 15:17:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:17:05 | evaluator | CYCLE START
+2026-03-05 15:17:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:17:05 | evaluator | STEP 1: updater start
+2026-03-05 15:17:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:16:00
+2026-03-05 15:17:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:17:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:17:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:17:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:17:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:17:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:17:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:17:05 | evaluator | CYCLE END
+2026-03-05 15:17:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:17:05 | evaluator | 
+2026-03-05 15:18:05 | evaluator | 
+2026-03-05 15:18:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:18:05 | evaluator | CYCLE START
+2026-03-05 15:18:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:18:05 | evaluator | STEP 1: updater start
+2026-03-05 15:18:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:17:00
+2026-03-05 15:18:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:18:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:18:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:18:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:18:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:18:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:18:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:18:05 | evaluator | CYCLE END
+2026-03-05 15:18:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:18:05 | evaluator | 
+2026-03-05 15:19:05 | evaluator | 
+2026-03-05 15:19:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:19:05 | evaluator | CYCLE START
+2026-03-05 15:19:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:19:05 | evaluator | STEP 1: updater start
+2026-03-05 15:19:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:18:00
+2026-03-05 15:19:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:19:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:19:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:19:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:19:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:19:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:19:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:19:05 | evaluator | CYCLE END
+2026-03-05 15:19:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:19:05 | evaluator | 
+2026-03-05 15:20:05 | evaluator | 
+2026-03-05 15:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:20:05 | evaluator | CYCLE START
+2026-03-05 15:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:20:05 | evaluator | STEP 1: updater start
+2026-03-05 15:20:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:19:00
+2026-03-05 15:20:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:20:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:20:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:20:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:20:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:20:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:20:05 | evaluator | CYCLE END
+2026-03-05 15:20:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:20:05 | evaluator | 
+2026-03-05 15:21:05 | evaluator | 
+2026-03-05 15:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:21:05 | evaluator | CYCLE START
+2026-03-05 15:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:21:05 | evaluator | STEP 1: updater start
+2026-03-05 15:21:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:20:00
+2026-03-05 15:21:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:21:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:21:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:21:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:21:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:21:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:21:05 | evaluator | CYCLE END
+2026-03-05 15:21:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:21:05 | evaluator | 
+2026-03-05 15:22:05 | evaluator | 
+2026-03-05 15:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:22:05 | evaluator | CYCLE START
+2026-03-05 15:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:22:05 | evaluator | STEP 1: updater start
+2026-03-05 15:22:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:21:00
+2026-03-05 15:22:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:22:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:22:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:22:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:22:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:22:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:22:05 | evaluator | CYCLE END
+2026-03-05 15:22:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:22:05 | evaluator | 
+2026-03-05 15:23:05 | evaluator | 
+2026-03-05 15:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:23:05 | evaluator | CYCLE START
+2026-03-05 15:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:23:05 | evaluator | STEP 1: updater start
+2026-03-05 15:23:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:22:00
+2026-03-05 15:23:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:23:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:23:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:23:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:23:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:23:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:23:05 | evaluator | CYCLE END
+2026-03-05 15:23:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:23:05 | evaluator | 
+2026-03-05 15:24:05 | evaluator | 
+2026-03-05 15:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:24:05 | evaluator | CYCLE START
+2026-03-05 15:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:24:05 | evaluator | STEP 1: updater start
+2026-03-05 15:24:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:23:00
+2026-03-05 15:24:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:24:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:24:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
+2026-03-05 15:24:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:24:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:24:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:24:05 | evaluator | CYCLE END
+2026-03-05 15:24:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:24:05 | evaluator | 
+2026-03-05 15:25:05 | evaluator | 
+2026-03-05 15:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:25:05 | evaluator | CYCLE START
+2026-03-05 15:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:25:05 | evaluator | STEP 1: updater start
+2026-03-05 15:25:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:24:00
+2026-03-05 15:25:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:25:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:25:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:25:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:25:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:25:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:25:05 | evaluator | CYCLE END
+2026-03-05 15:25:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:25:05 | evaluator | 
+2026-03-05 15:26:05 | evaluator | 
+2026-03-05 15:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:26:05 | evaluator | CYCLE START
+2026-03-05 15:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:26:05 | evaluator | STEP 1: updater start
+2026-03-05 15:26:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:25:00
+2026-03-05 15:26:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:26:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:26:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:26:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:26:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:26:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:26:05 | evaluator | CYCLE END
+2026-03-05 15:26:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:26:05 | evaluator | 
+2026-03-05 15:27:05 | evaluator | 
+2026-03-05 15:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:27:05 | evaluator | CYCLE START
+2026-03-05 15:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:27:05 | evaluator | STEP 1: updater start
+2026-03-05 15:27:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:26:00
+2026-03-05 15:27:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:27:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:27:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:27:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:27:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:27:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:27:05 | evaluator | CYCLE END
+2026-03-05 15:27:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:27:05 | evaluator | 
+2026-03-05 15:28:05 | evaluator | 
+2026-03-05 15:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:28:05 | evaluator | CYCLE START
+2026-03-05 15:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:28:05 | evaluator | STEP 1: updater start
+2026-03-05 15:28:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:27:00
+2026-03-05 15:28:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:28:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:28:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:28:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:28:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:28:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:28:05 | evaluator | CYCLE END
+2026-03-05 15:28:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:28:05 | evaluator | 
+2026-03-05 15:29:05 | evaluator | 
+2026-03-05 15:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:29:05 | evaluator | CYCLE START
+2026-03-05 15:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:29:05 | evaluator | STEP 1: updater start
+2026-03-05 15:29:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:28:00
+2026-03-05 15:29:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:29:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:29:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:29:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:29:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:29:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:29:05 | evaluator | CYCLE END
+2026-03-05 15:29:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:29:05 | evaluator | 
+2026-03-05 15:30:05 | evaluator | 
+2026-03-05 15:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:30:05 | evaluator | CYCLE START
+2026-03-05 15:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:30:05 | evaluator | STEP 1: updater start
+2026-03-05 15:30:05 | spot_updater | SPOT_UPDATE: appended 2026-03-05 15:29:00
+2026-03-05 15:30:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-05 15:30:05 | evaluator | STEP 2: paper_trade start
+2026-03-05 15:30:05 | paper_trade | Trading day completed (DONE state)
+2026-03-05 15:30:05 | evaluator | STEP 2: paper_trade end
+2026-03-05 15:30:05 | evaluator | STEP 3: mtm start
+2026-03-05 15:30:05 | evaluator | STEP 3: mtm end
+2026-03-05 15:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:30:05 | evaluator | CYCLE END
+2026-03-05 15:30:05 | evaluator | ------------------------------------------------------------
+2026-03-05 15:30:05 | evaluator | 
