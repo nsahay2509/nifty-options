@@ -7,14 +7,13 @@
 
 
 
-
-
 # python3 scripts/analyze_trades.py
 
 import csv
 import math
 from pathlib import Path
 from datetime import datetime
+from collections import defaultdict
 
 # ---------- paths ----------
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -33,7 +32,11 @@ def parse_time(ts):
     return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
 
 
-def main():
+# ------------------------------------------------
+# PARSE SYSTEM PNL
+# ------------------------------------------------
+
+def extract_trades():
 
     trades = []
     current_trade = None
@@ -41,21 +44,14 @@ def main():
     with open(SYSTEM_PNL_FILE) as f:
 
         reader = csv.reader(f)
-
-        # skip header
-        next(reader, None)
+        next(reader, None)  # skip header
 
         for row in reader:
 
             if len(row) < 7:
                 continue
 
-            timestamp = row[0]
-            trade_id = row[1]
-            event = row[2]
-            trade_type = row[3]
-            strike = row[4]
-            expiry = row[5]
+            timestamp, trade_id, event, trade_type, strike, expiry = row[:6]
 
             try:
                 realised = float(row[6])
@@ -75,16 +71,13 @@ def main():
 
             elif event == "EXIT" and current_trade:
 
-                exit_realised = realised
-                entry_realised = current_trade["entry_realised"]
-
                 entry_time = parse_time(current_trade["entry_time"])
                 exit_time = parse_time(timestamp)
 
                 duration = (exit_time - entry_time).total_seconds() / 60
-                duration = math.ceil(duration)   # round up to next minute
+                duration = math.ceil(duration)
 
-                trade_pnl = exit_realised - entry_realised
+                trade_pnl = realised - current_trade["entry_realised"]
 
                 trades.append({
                     "trade_id": current_trade["trade_id"],
@@ -99,9 +92,14 @@ def main():
 
                 current_trade = None
 
-    # ------------------------------------------------
-    # TRADE SUMMARY (skip duplicate trade_ids)
-    # ------------------------------------------------
+    return trades
+
+
+# ------------------------------------------------
+# UPDATE TRADE SUMMARY
+# ------------------------------------------------
+
+def update_trade_summary(trades):
 
     existing_ids = set()
 
@@ -149,42 +147,51 @@ def main():
                 t["trade_pnl"],
             ])
 
-    # ------------------------------------------------
-    # DAILY SUMMARY (overwrite same date row)
-    # ------------------------------------------------
 
-    total_trades = len(trades)
-    winning = sum(1 for t in trades if t["trade_pnl"] > 0)
-    losing = sum(1 for t in trades if t["trade_pnl"] <= 0)
+# ------------------------------------------------
+# UPDATE DAILY SUMMARY
+# ------------------------------------------------
 
-    gross_pnl = sum(t["trade_pnl"] for t in trades)
+def update_daily_summary(trades):
 
-    estimated_cost = total_trades * TRADE_COST
-    net_pnl = gross_pnl - estimated_cost
+    daily = defaultdict(list)
 
-    date = trades[0]["entry_time"].split(" ")[0] if trades else ""
+    for t in trades:
+        date = t["entry_time"].split(" ")[0]
+        daily[date].append(t)
 
-    rows = []
+    existing_rows = {}
 
     if DAILY_SUMMARY_FILE.exists():
 
         with open(DAILY_SUMMARY_FILE) as f:
             reader = csv.reader(f)
-            header = next(reader, None)
+            next(reader, None)
 
             for row in reader:
-                if row and row[0] != date:
-                    rows.append(row)
+                if row:
+                    existing_rows[row[0]] = row
 
-    rows.append([
-        date,
-        total_trades,
-        winning,
-        losing,
-        round(gross_pnl, 2),
-        estimated_cost,
-        round(net_pnl, 2),
-    ])
+    for date, trade_list in daily.items():
+
+        total_trades = len(trade_list)
+        winning = sum(1 for t in trade_list if t["trade_pnl"] > 0)
+        losing = sum(1 for t in trade_list if t["trade_pnl"] <= 0)
+
+        gross_pnl = sum(t["trade_pnl"] for t in trade_list)
+
+        estimated_cost = total_trades * TRADE_COST
+        net_pnl = gross_pnl - estimated_cost
+
+        existing_rows[date] = [
+            date,
+            total_trades,
+            winning,
+            losing,
+            round(gross_pnl, 2),
+            estimated_cost,
+            round(net_pnl, 2),
+        ]
 
     with open(DAILY_SUMMARY_FILE, "w", newline="") as f:
 
@@ -200,7 +207,20 @@ def main():
             "net_pnl",
         ])
 
-        writer.writerows(rows)
+        for row in sorted(existing_rows.values()):
+            writer.writerow(row)
+
+
+# ------------------------------------------------
+# MAIN
+# ------------------------------------------------
+
+def main():
+
+    trades = extract_trades()
+
+    update_trade_summary(trades)
+    update_daily_summary(trades)
 
     print("Trade summary updated:", TRADE_SUMMARY_FILE)
     print("Daily summary updated:", DAILY_SUMMARY_FILE)
