@@ -1,16 +1,16 @@
 {
   "status": "CLOSED",
-  "trade_id": "20260306_141305",
-  "regime": "SELL_PE",
-  "strike": 24600,
-  "expiry": "2026-03-10",
-  "entry_time": "2026-03-06 14:13:05",
+  "trade_id": "20260311_145405",
+  "regime": "SELL_CE",
+  "strike": 23900,
+  "expiry": "2026-03-17",
+  "entry_time": "2026-03-11 14:54:05",
   "legs": [
     {
-      "security_id": 45514,
-      "entry_price": 216.0,
+      "security_id": 57791,
+      "entry_price": 323.6,
       "lots": 1,
-      "type": "PE"
+      "type": "CE"
     }
   ]
 }

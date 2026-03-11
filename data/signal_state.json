@@ -1,1 +1,1 @@
-{"last_regime": "SELL_CE", "last_signal_time": "2026-03-06T14:28:05.309113+05:30", "candidate_regime": "SELL_CE", "candidate_count": 1, "confirmed_regime": "WAIT"}
+{"last_regime": "SELL_STRADDLE", "last_signal_time": "2026-03-11T15:21:05.237849+05:30", "candidate_regime": "SELL_STRADDLE", "candidate_count": 3, "confirmed_regime": "SELL_STRADDLE"}

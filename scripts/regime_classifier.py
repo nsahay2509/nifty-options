@@ -6,11 +6,11 @@ import json
 
 
 # ---------------- CONFIG ----------------
-WINDOW = 15                 # minutes used for regime detection
+WINDOW = 25                 # minutes used for regime detection
 MIN_TRADE_TIME = (9, 20)    # avoid unstable open
 
 # --- thresholds (tune) ---
-STRADDLE_D_MAX = 0.38       # was 0.30 (looser => more straddles)
+STRADDLE_D_MAX = 0.34       # was 0.30 (looser => more straddles)
 STRADDLE_COMP_MAX = 0.85    # was 0.70 (looser => more straddles)
 
 TREND_D_MIN = 0.45          # trend threshold (keep as-is initially)
@@ -107,7 +107,10 @@ def classify_regime(candles=None):
 
     # ---- trend regimes ----
     if d >= TREND_D_MIN:
-        return "SELL_PE" if b > 0 else "SELL_CE"
+        if b > 20:
+            return "SELL_PE"
+        if b < -5:
+            return "SELL_CE"
 
     return "WAIT"
 
