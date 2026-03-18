@@ -14,7 +14,7 @@ from scripts.regime_classifier import classify_regime
 STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "signal_state.json"
 
 MIN_GAP_MINUTES = 10      # prevent over-trading
-REGIME_PERSISTENCE = 3    # candles required to confirm regime
+REGIME_PERSISTENCE = 2    # candles required to confirm regime
 
 
 # ---------------- STATE ----------------

@@ -13,6 +13,7 @@ from scripts.signal_engine import generate_signal
 from scripts.option_resolver import get_atm_straddle
 from scripts.utils import fetch_ltp_map
 from scripts.logger import get_logger
+from scripts.regime_classifier import direction_score, TREND_D_MIN
 
 
 # ==================================================
@@ -25,7 +26,7 @@ START_SCAN = dtime(9, 20)
 NO_NEW_ENTRY_AFTER = dtime(15, 15)
 FORCE_EXIT_TIME = dtime(15, 25)
 
-WINDOW = 15
+WINDOW = 25
 COOLDOWN_MINUTES = 5 # changed it to 5 as we are using regime comfirmation three consecutive time. Earlier it was 10 minutes which is too long for our use case.
 LOTS = 1
 
@@ -184,6 +185,43 @@ class PaperTradeEngine:
         # ---------------- IN POSITION ----------------
         if self.state == "IN_POSITION":
 
+            # ---- compute direction strength ----
+            d = direction_score(history)
+
+            # ---- EARLY EXIT: trend weakening ----
+            if self.active_regime in ("SELL_PE", "SELL_CE") and d < TREND_D_MIN:
+                self.exit_position(
+                    now,
+                    reason=f"TREND_WEAK d={d:.2f}",
+                )
+
+                self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+                self.state = "COOLDOWN"
+
+                logger.info(
+                    f"Trend weakened → cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+                )
+                return
+
+            # 🔴 INSERT HERE
+            # ---- STRADDLE BREAKOUT EXIT ----
+            if self.active_regime == "SELL_STRADDLE":
+
+                if d >= TREND_D_MIN or d >= 0.28:
+                    self.exit_position(
+                        now,
+                        reason=f"STRADDLE_BREAKOUT d={d:.2f}",
+                    )
+
+                    self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+                    self.state = "COOLDOWN"
+
+                    logger.info(
+                        f"Straddle breakout → cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+                    )
+                    return
+
+            # ---- existing behaviour ----
             if regime == "WAIT" or regime == self.active_regime:
                 return
 
@@ -200,7 +238,6 @@ class PaperTradeEngine:
                 logger.info(
                     f"Entering cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
                 )
-
     # ==================================================
     # ENTRY
     # ==================================================

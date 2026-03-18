@@ -3,22 +3,36 @@
 from pathlib import Path
 from datetime import datetime
 import json
+import logging
 
+
+log_path = Path(__file__).resolve().parents[1] / "data" / "logs" / "regime_debug.log"
+
+logger = logging.getLogger("regime_debug")
+
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+
+    handler = logging.FileHandler(log_path)
+    formatter = logging.Formatter("%(asctime)s %(message)s")
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
 
 # ---------------- CONFIG ----------------
 WINDOW = 25                 # minutes used for regime detection
 MIN_TRADE_TIME = (9, 20)    # avoid unstable open
 
 # --- thresholds (tune) ---
-STRADDLE_D_MAX = 0.34       # was 0.30 (looser => more straddles)
-STRADDLE_COMP_MAX = 0.85    # was 0.70 (looser => more straddles)
+STRADDLE_D_MAX = 0.30       # was 0.30 (looser => more straddles)
+STRADDLE_COMP_MAX = 0.95    # was 0.70 (looser => more straddles)
 
-TREND_D_MIN = 0.45          # trend threshold (keep as-is initially)
+TREND_D_MIN = 0.32          # trend threshold (keep as-is initially)
 
 # Optional: block straddle when the last WINDOW range is too large
 # (prevents selling straddle in high-vol expansion)
 USE_RANGE_GUARD = True
-MAX_WINDOW_RANGE_POINTS = 80.0   # adjust for NIFTY; start conservative
+MAX_WINDOW_RANGE_POINTS = 180.0   # adjust for NIFTY; start conservative
 
 
 # ---------------- DATA LOADER ----------------
@@ -94,15 +108,18 @@ def classify_regime(candles=None):
     if (dt.hour, dt.minute) < MIN_TRADE_TIME:
         return "WAIT"
 
+    # ---- metrics ----
     d = direction_score(candles)
     b = bias(candles)
     comp = compression_score(candles)
+    rng = window_range(candles)
 
-    # ---- encourage straddle (looser thresholds) ----
+    # ---- debug log (always print) ----
+    logger.info(f"{ts} | d={d:.3f} b={b:.1f} comp={comp:.2f} range={rng:.1f}")
+
+    # ---- straddle regime ----
     if d <= STRADDLE_D_MAX and comp <= STRADDLE_COMP_MAX:
-        if not USE_RANGE_GUARD:
-            return "SELL_STRADDLE"
-        if window_range(candles) <= MAX_WINDOW_RANGE_POINTS:
+        if not USE_RANGE_GUARD or rng <= MAX_WINDOW_RANGE_POINTS:
             return "SELL_STRADDLE"
 
     # ---- trend regimes ----
