@@ -9,6 +9,7 @@ import logging
 log_path = Path(__file__).resolve().parents[1] / "data" / "logs" / "regime_debug.log"
 
 logger = logging.getLogger("regime_debug")
+ENABLE_STRADDLE = False
 
 if not logger.handlers:
     logger.setLevel(logging.INFO)
@@ -118,9 +119,10 @@ def classify_regime(candles=None):
     logger.info(f"{ts} | d={d:.3f} b={b:.1f} comp={comp:.2f} range={rng:.1f}")
 
     # ---- straddle regime ----
-    if d <= STRADDLE_D_MAX and comp <= STRADDLE_COMP_MAX:
-        if not USE_RANGE_GUARD or rng <= MAX_WINDOW_RANGE_POINTS:
-            return "SELL_STRADDLE"
+    if ENABLE_STRADDLE:
+        if d <= STRADDLE_D_MAX and comp <= STRADDLE_COMP_MAX:
+            if not USE_RANGE_GUARD or rng <= MAX_WINDOW_RANGE_POINTS:
+                return "SELL_STRADDLE"
 
     # ---- trend regimes ----
     if d >= TREND_D_MIN:
