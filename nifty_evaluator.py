@@ -10,7 +10,12 @@ from pathlib import Path
 from scripts.paper_trade_engine import run as run_paper_trade
 from scripts.logger import get_logger
 from scripts.paper_mtm_engine import run as run_mtm
-
+from scripts.paper_trade_engine_buy import run as run_buy_trade
+from scripts.paper_mtm_engine_buy import run as run_buy_mtm
+from scripts.regime_classifier import load_last_candles
+from scripts.signal_engine import generate_signal
+from scripts.utils import fetch_ltp_map
+from scripts.paper_mtm_engine import load_open_position
 
 # ---------------- CONFIG ----------------
 IST = ZoneInfo("Asia/Kolkata")
@@ -75,13 +80,77 @@ def run_cycle():
     logger.info(f"STEP 1: updater end | ok={ok}")
 
     if ok:
-        logger.info("STEP 2: paper_trade start")
-        run_paper_trade()
-        logger.info("STEP 2: paper_trade end")
+        # ---- generate signal once ----
+        history = load_last_candles(25)
+        signal, regime = generate_signal(history)
 
-        logger.info("STEP 3: mtm start")
-        run_mtm()
-        logger.info("STEP 3: mtm end")
+        logger.info(f"MASTER_SIGNAL | signal={signal} regime={regime}")
+
+        # ==================================================
+        # ⭐ STEP 2: COLLECT SECURITY IDS (for shared LTP)
+        # ==================================================
+        security_ids = []
+
+        try:
+            pos = load_open_position()
+            if pos:
+                for leg in pos.get("legs", []):
+                    sid = int(leg.get("security_id"))
+                    if sid:
+                        security_ids.append(sid)
+        except Exception:
+            pass
+
+        # remove duplicates
+        security_ids = list(set(security_ids))
+
+        # ==================================================
+        # ⭐ STEP 3: FETCH LTP ONCE
+        # ==================================================
+        ltp_map = {}
+        if security_ids:
+            ltp_map = fetch_ltp_map(security_ids)
+
+            # retry once if fully empty
+            if all(v is None for v in ltp_map.values()):
+                logger.warning("EVALUATOR LTP retry triggered")
+                import time
+                time.sleep(0.3)
+                ltp_map = fetch_ltp_map(security_ids)
+
+        logger.info(f"LTP_MAP_CYCLE | {ltp_map}")
+
+        # ==================================================
+        # STEP 4: SELL side
+        # ==================================================
+        logger.info("STEP 2: SELL paper_trade start")
+        run_paper_trade(
+            signal=signal,
+            regime=regime,
+            history=history,
+            ltp_map=ltp_map,
+        )
+        logger.info("STEP 2: SELL paper_trade end")
+
+        logger.info("STEP 3: SELL mtm start")
+        run_mtm(ltp_map=ltp_map)
+        logger.info("STEP 3: SELL mtm end")
+
+        # ==================================================
+        # STEP 5: BUY side
+        # ==================================================
+        logger.info("STEP 4: BUY paper_trade start")
+        run_buy_trade(
+            signal=signal,
+            regime=regime,
+            history=history,
+            ltp_map=ltp_map,
+        )
+        logger.info("STEP 4: BUY paper_trade end")
+
+        logger.info("STEP 5: BUY mtm start")
+        run_buy_mtm(ltp_map=ltp_map)
+        logger.info("STEP 5: BUY mtm end")
 
     logger.info("-" * 60)
     logger.info("CYCLE END")

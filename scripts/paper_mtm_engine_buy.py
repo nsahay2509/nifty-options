@@ -1,3 +1,8 @@
+
+# scripts/paper_mtm_engine_buy.py
+
+
+
 import json
 from pathlib import Path
 from datetime import datetime
@@ -8,14 +13,14 @@ from scripts.utils import fetch_ltp_map
 
 
 IST = ZoneInfo("Asia/Kolkata")
-logger = get_logger("paper_mtm")
+logger = get_logger("paper_mtm_buy")
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-OPEN_POS_FILE = BASE_DIR / "data" / "open_position.json"
-RESULTS_FILE = BASE_DIR / "data" / "results" / "system_pnl.csv"
-LAST_STATE_FILE = BASE_DIR / "data" / "last_state.json"
-PNL_STATE_FILE = BASE_DIR / "data" / "pnl_state.json"
+OPEN_POS_FILE = BASE_DIR / "data" / "open_position_buy.json"
+RESULTS_FILE = BASE_DIR / "data" / "results" / "system_pnl_buy.csv"
+LAST_STATE_FILE = BASE_DIR / "data" / "last_state_buy.json"
+PNL_STATE_FILE = BASE_DIR / "data" / "pnl_state_buy.json"
 
 RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -155,32 +160,34 @@ def run(ltp_map=None):
 
     security_ids = [int(l["security_id"]) for l in legs]
 
-    ltp_map = ltp_map or {}
-
-    logger.info(f"LTP_MAP_SHARED | {ltp_map}")
+    # ---- use shared LTP ----
+    if ltp_map is None:
+        logger.warning("LTP_MAP_MISSING_FROM_EVALUATOR")
+        ltp_map = fetch_ltp_map(security_ids)
 
     LOT_SIZE = 50
     unrealised = 0.0
 
     for leg in legs:
         sid = int(leg["security_id"])
+        entry_price_raw = leg.get("entry_price")
 
-        entry_raw = leg.get("entry_price")
-        if entry_raw is None:
+        if entry_price_raw is None:
             logger.error(f"ENTRY_PRICE_NONE | {leg}")
             continue
 
-        entry_price = float(entry_raw)
+        entry_price = float(entry_price_raw)
+
         lots = int(leg["lots"])
 
         ltp = ltp_map.get(sid)
 
         if ltp is None:
-            logger.error(f"LTP_MISSING_SHARED | sid={sid} map={ltp_map}")
+            logger.error(f"LTP_MISSING | sid={sid} map={ltp_map}")
             continue
 
         qty = LOT_SIZE * lots
-        unrealised += (entry_price - ltp) * qty  # short MTM
+        unrealised += (ltp - entry_price) * qty
 
     total = realised_today + unrealised
 

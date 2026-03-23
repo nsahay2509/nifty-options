@@ -1,5 +1,6 @@
 
 
+# paper_trade_engine_buy.py
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time as dtime
@@ -19,7 +20,7 @@ from scripts.regime_classifier import direction_score, TREND_D_MIN
 # CONFIG
 # ==================================================
 IST = ZoneInfo("Asia/Kolkata")
-logger = get_logger("paper_trade")
+logger = get_logger("paper_trade_buy")
 
 START_SCAN = dtime(9, 20)
 NO_NEW_ENTRY_AFTER = dtime(15, 15)
@@ -37,7 +38,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-OPEN_POS_FILE = DATA_DIR / "open_position.json"
+OPEN_POS_FILE = DATA_DIR / "open_position_buy.json"
 
 
 # ==================================================
@@ -66,25 +67,8 @@ class PaperTradeEngine:
         self.cooldown_until: datetime | None = None
         self.active_regime: str | None = None
         self.max_pnl = 0
-        self.sync_from_disk()
 
         logger.info("PaperTradeEngine initialized")
-
-    def sync_from_disk(self):
-        if not OPEN_POS_FILE.exists():
-            return
-
-        try:
-            with OPEN_POS_FILE.open() as f:
-                data = json.load(f)
-
-            if data.get("status") == "OPEN":
-                self.state = "IN_POSITION"
-                self.active_regime = data.get("regime")
-                logger.warning("Recovered OPEN position from disk")
-
-        except Exception:
-            pass
 
     # ------------------------------------------------
     def now(self) -> datetime:
@@ -104,17 +88,27 @@ class PaperTradeEngine:
         legs = []
 
         if pos.ce_security_id:
+            ce_price = entry_prices.get(pos.ce_security_id)
+            if ce_price is None:
+                logger.error(f"ENTRY_PRICE_MISSING | CE | {pos.ce_security_id}")
+                ce_price = 0.0
+
             legs.append({
                 "security_id": pos.ce_security_id,
-                "entry_price": entry_prices.get(pos.ce_security_id),
+                "entry_price": ce_price,
                 "lots": pos.lots,
                 "type": "CE",
             })
 
         if pos.pe_security_id:
+            pe_price = entry_prices.get(pos.pe_security_id)
+            if pe_price is None:
+                logger.error(f"ENTRY_PRICE_MISSING | PE | {pos.pe_security_id}")
+                pe_price = 0.0
+
             legs.append({
                 "security_id": pos.pe_security_id,
-                "entry_price": entry_prices.get(pos.pe_security_id),
+                "entry_price": pe_price,
                 "lots": pos.lots,
                 "type": "PE",
             })
@@ -154,26 +148,6 @@ class PaperTradeEngine:
     def tick(self, signal=None, regime=None, history=None, ltp_map=None):
 
         now = self.now()
-        
-        # ---- HARD STALE POSITION CLEANUP (new day safety) ----
-        try:
-            if OPEN_POS_FILE.exists():
-                with OPEN_POS_FILE.open() as f:
-                    data = json.load(f)
-
-                if data.get("status") == "OPEN":
-                    entry_time = data.get("entry_time", "")
-                    entry_date = entry_time[:10]
-                    today = now.strftime("%Y-%m-%d")
-
-                    if entry_date and entry_date != today:
-                        logger.warning("STALE POSITION DETECTED → FORCE CLOSE")
-                        self.close_open_position()
-                        self.state = "FLAT"
-                        self.position = None
-                        self.active_regime = None
-        except Exception:
-            pass
 
         # ---- before scan window ----
         if now.time() < START_SCAN:
@@ -257,7 +231,6 @@ class PaperTradeEngine:
                 )
                 return
 
-
             # ---- existing behaviour ----
             if regime == "WAIT" or regime == self.active_regime:
                 return
@@ -283,28 +256,30 @@ class PaperTradeEngine:
         spot = history[-1]["close"]
         atm = get_atm_straddle(spot)
         self.max_pnl = 0
+
         ce_id = None
         pe_id = None
 
         if regime == "SELL_PE":
-            pe_id = atm["pe_security_id"]
+            ce_id = atm["ce_security_id"]
 
         elif regime == "SELL_CE":
-            ce_id = atm["ce_security_id"]
+            pe_id = atm["pe_security_id"]
 
         trade_id = datetime.now(IST).strftime("%Y%m%d_%H%M%S")
 
-        # ---- fetch entry LTPs BEFORE committing position ----
+        # ---- fetch LTP BEFORE creating position ----
         security_ids = [x for x in (ce_id, pe_id) if x]
         ltp_map = fetch_ltp_map(security_ids)
+
         logger.info(f"LTP_MAP_ENTRY | ids={security_ids} map={ltp_map}")
 
-        # ---- strict validation: all legs must have LTP ----
+        # ---- STRICT validation (no partial trades) ----
         if any(ltp_map.get(sid) is None for sid in security_ids):
             logger.error(f"ENTRY_BLOCKED_LTP_INCOMPLETE | {ltp_map}")
             return
 
-        # ---- now safe to create position ----
+        # ---- now safe ----
         self.position = Position(
             trade_id=trade_id,
             regime=regime,
@@ -320,12 +295,11 @@ class PaperTradeEngine:
         self.active_regime = regime
 
         logger.info(
-            f"ENTRY | {regime} | spot={spot:.2f} "
+            f"ENTRY | BUY_FROM_{regime} | spot={spot:.2f} "
             f"strike={atm['strike']} exp={atm['expiry']} "
             f"ce_id={ce_id} pe_id={pe_id} lots={LOTS}"
         )
 
-        # ---- write with full, valid prices ----
         self.write_open_position(self.position, ltp_map)
 
     # ==================================================
@@ -349,15 +323,13 @@ class PaperTradeEngine:
         self.active_regime = None
         self.state = "FLAT"
 
-
     def compute_live_pnl(self, ltp_map=None):
         if not self.position:
             return 0
 
         LOT_SIZE = 50
-        unrealised = 0.0
+        pnl = 0.0
 
-        # ---- collect security ids ----
         security_ids = []
         if self.position.ce_security_id:
             security_ids.append(self.position.ce_security_id)
@@ -367,44 +339,35 @@ class PaperTradeEngine:
         if not security_ids:
             return 0
 
-        # ---- use shared LTP ----
+        # use shared map
         ltp_map = ltp_map or {}
 
-        logger.info(f"LTP_MAP_LIVE (shared) | {ltp_map}")
-
-        # ---- load position ----
         try:
             with OPEN_POS_FILE.open() as f:
                 pos = json.load(f)
         except Exception:
-            logger.error("OPEN_POS_READ_FAIL")
             return 0
 
-        # ---- compute pnl ----
         for leg in pos.get("legs", []):
             sid = int(leg["security_id"])
-
-            entry_raw = leg.get("entry_price")
-            if entry_raw is None:
-                logger.error(f"ENTRY_PRICE_NONE | {leg}")
-                continue
-
-            entry = float(entry_raw)
+            entry = float(leg["entry_price"])
             lots = int(leg["lots"])
-            qty = LOT_SIZE * lots
 
             ltp = ltp_map.get(sid)
             if ltp is None:
-                logger.error(f"LTP_MISSING_SHARED | {sid}")
                 continue
 
-            unrealised += (entry - ltp) * qty  # short logic
+            qty = LOT_SIZE * lots
 
-        return unrealised
+            # BUY logic
+            pnl += (ltp - entry) * qty
+
+        return pnl
+
 
     def get_current_total_pnl(self):
         try:
-            pnl_file = BASE_DIR / "data" / "results" / "system_pnl.csv"
+            pnl_file = BASE_DIR / "data" / "results" / "system_pnl_buy.csv"
 
             if not pnl_file.exists():
                 return 0
@@ -420,7 +383,7 @@ class PaperTradeEngine:
         except Exception:
             return 0
 
-            
+
 # ==================================================
 # SINGLETON ENGINE
 # ==================================================
