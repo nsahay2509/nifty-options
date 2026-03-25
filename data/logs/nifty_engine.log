@@ -1,37 +1,171 @@
-2026-03-25 11:46:32 | paper_trade | 
 
 PaperTradeEngine initialized
-2026-03-25 11:46:32 | paper_trade_buy | PaperTradeEngine initialized
-2026-03-25 11:46:32 | evaluator | NIFTY Evaluator Started
-2026-03-25 11:46:32 | evaluator | Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +2 sec
-2026-03-25 11:46:32 | evaluator | ------------------------------------------------------------
-2026-03-25 11:47:05 | evaluator | 
-2026-03-25 11:47:05 | evaluator | ------------------------------------------------------------
-2026-03-25 11:47:05 | evaluator | CYCLE START
-2026-03-25 11:47:05 | evaluator | ------------------------------------------------------------
-2026-03-25 11:47:05 | evaluator | STEP 1: updater start
-2026-03-25 11:47:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 11:46:00
-2026-03-25 11:47:05 | evaluator | STEP 1: updater end | ok=True
-2026-03-25 11:47:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_CE
-2026-03-25 11:47:05 | evaluator | LTP_MAP_CYCLE | None
-2026-03-25 11:47:05 | evaluator | STEP 2: SELL paper_trade start
-2026-03-25 11:47:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_CE
-2026-03-25 11:47:06 | paper_trade | LTP_MAP_ENTRY | ids=[54512] map={54512: 299.75}
-2026-03-25 11:47:06 | paper_trade | ENTRY | SELL_CE | spot=23363.55 strike=23350 exp=2026-03-30 ce_id=54512 pe_id=None lots=1
-2026-03-25 11:47:06 | evaluator | STEP 2: SELL paper_trade end
-2026-03-25 11:47:06 | evaluator | STEP 3: SELL mtm start
-2026-03-25 11:47:06 | paper_mtm | LTP_MAP_SHARED | {}
-2026-03-25 11:47:06 | paper_mtm | LTP_MISSING_SHARED | sid=54512 map={}
-2026-03-25 11:47:06 | paper_mtm | ENTRY | SELL_CE | strike=23350 exp=2026-03-30 | Realised=0.00 Unrealised=0.00 Total=0.00
-2026-03-25 11:47:06 | evaluator | STEP 3: SELL mtm end
-2026-03-25 11:47:06 | evaluator | STEP 4: BUY paper_trade start
-2026-03-25 11:47:06 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_CE
-2026-03-25 11:47:06 | paper_trade_buy | LTP_MAP_ENTRY | ids=[54513] map={54513: None}
-2026-03-25 11:47:06 | paper_trade_buy | ENTRY_BLOCKED_LTP_INVALID | {54513: None}
-2026-03-25 11:47:06 | evaluator | STEP 4: BUY paper_trade end
-2026-03-25 11:47:06 | evaluator | STEP 5: BUY mtm start
-2026-03-25 11:47:06 | evaluator | STEP 5: BUY mtm end
-2026-03-25 11:47:06 | evaluator | ------------------------------------------------------------
-2026-03-25 11:47:06 | evaluator | CYCLE END
-2026-03-25 11:47:06 | evaluator | ------------------------------------------------------------
-2026-03-25 11:47:06 | evaluator | 
+2026-03-25 12:14:58 | paper_trade_buy | PaperTradeEngine initialized
+2026-03-25 12:14:58 | evaluator | NIFTY Evaluator Started
+2026-03-25 12:14:58 | evaluator | Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +2 sec
+2026-03-25 12:14:58 | evaluator | ------------------------------------------------------------
+2026-03-25 12:15:05 | evaluator | 
+2026-03-25 12:15:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:15:05 | evaluator | CYCLE START
+2026-03-25 12:15:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:15:05 | evaluator | STEP 1: updater start
+2026-03-25 12:15:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:14:00
+2026-03-25 12:15:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:15:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:15:06 | evaluator | LTP_MAP_CYCLE | {54516: 283.15, 54517: 297.2}
+2026-03-25 12:15:06 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:15:06 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:15:06 | paper_trade | LTP_MAP_ENTRY | ids=[54517] map={54516: 283.15, 54517: 297.2}
+2026-03-25 12:15:06 | paper_trade | ENTRY | SELL_PE | spot=23439.75 strike=23450 exp=2026-03-30 ce_id=None pe_id=54517 lots=1
+2026-03-25 12:15:06 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:15:06 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:15:06 | paper_mtm | LTP_MAP_SHARED | {54516: 283.15, 54517: 297.2}
+2026-03-25 12:15:06 | paper_mtm | ENTRY | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=0.00 Total=0.00
+2026-03-25 12:15:06 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:15:06 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:15:06 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:15:06 | paper_trade_buy | LTP_MAP_ENTRY | ids=[54516] map={54516: 283.15, 54517: 297.2}
+2026-03-25 12:15:06 | paper_trade_buy | ENTRY | BUY_FROM_SELL_PE | spot=23439.75 strike=23450 exp=2026-03-30 ce_id=54516 pe_id=None lots=1
+2026-03-25 12:15:06 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:15:06 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:15:06 | paper_mtm_buy | ENTRY | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=0.00 Total=0.00
+2026-03-25 12:15:06 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:15:06 | evaluator | ------------------------------------------------------------
+2026-03-25 12:15:06 | evaluator | CYCLE END
+2026-03-25 12:15:06 | evaluator | ------------------------------------------------------------
+2026-03-25 12:15:06 | evaluator | 
+2026-03-25 12:16:05 | evaluator | 
+2026-03-25 12:16:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:16:05 | evaluator | CYCLE START
+2026-03-25 12:16:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:16:05 | evaluator | STEP 1: updater start
+2026-03-25 12:16:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:15:00
+2026-03-25 12:16:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:16:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:16:05 | evaluator | LTP_MAP_CYCLE | {54516: 284.95, 54517: 298.55}
+2026-03-25 12:16:05 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:16:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:16:05 | paper_trade | LTP_MAP_LIVE (shared) | {54516: 284.95, 54517: 298.55}
+2026-03-25 12:16:05 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:16:05 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:16:05 | paper_mtm | LTP_MAP_SHARED | {54516: 284.95, 54517: 298.55}
+2026-03-25 12:16:05 | paper_mtm | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-67.50 Total=-67.50
+2026-03-25 12:16:05 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:16:05 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:16:05 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:16:05 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:16:05 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:16:05 | paper_mtm_buy | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=90.00 Total=90.00
+2026-03-25 12:16:05 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:16:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:16:05 | evaluator | CYCLE END
+2026-03-25 12:16:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:16:05 | evaluator | 
+2026-03-25 12:17:05 | evaluator | 
+2026-03-25 12:17:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:17:05 | evaluator | CYCLE START
+2026-03-25 12:17:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:17:05 | evaluator | STEP 1: updater start
+2026-03-25 12:17:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:16:00
+2026-03-25 12:17:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:17:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:17:05 | evaluator | LTP_MAP_CYCLE | {54516: 279.55, 54517: 302.55}
+2026-03-25 12:17:05 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:17:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:17:05 | paper_trade | LTP_MAP_LIVE (shared) | {54516: 279.55, 54517: 302.55}
+2026-03-25 12:17:05 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:17:05 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:17:05 | paper_mtm | LTP_MAP_SHARED | {54516: 279.55, 54517: 302.55}
+2026-03-25 12:17:05 | paper_mtm | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-267.50 Total=-267.50
+2026-03-25 12:17:05 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:17:05 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:17:05 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:17:05 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:17:05 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:17:05 | paper_mtm_buy | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-180.00 Total=-180.00
+2026-03-25 12:17:05 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:17:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:17:05 | evaluator | CYCLE END
+2026-03-25 12:17:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:17:05 | evaluator | 
+2026-03-25 12:18:05 | evaluator | 
+2026-03-25 12:18:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:18:05 | evaluator | CYCLE START
+2026-03-25 12:18:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:18:05 | evaluator | STEP 1: updater start
+2026-03-25 12:18:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:17:00
+2026-03-25 12:18:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:18:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:18:05 | evaluator | LTP_MAP_CYCLE | {54516: 279.6, 54517: 301.0}
+2026-03-25 12:18:05 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:18:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:18:05 | paper_trade | LTP_MAP_LIVE (shared) | {54516: 279.6, 54517: 301.0}
+2026-03-25 12:18:05 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:18:05 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:18:05 | paper_mtm | LTP_MAP_SHARED | {54516: 279.6, 54517: 301.0}
+2026-03-25 12:18:05 | paper_mtm | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-190.00 Total=-190.00
+2026-03-25 12:18:05 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:18:05 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:18:05 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:18:05 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:18:05 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:18:05 | paper_mtm_buy | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-177.50 Total=-177.50
+2026-03-25 12:18:05 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:18:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:18:05 | evaluator | CYCLE END
+2026-03-25 12:18:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:18:05 | evaluator | 
+2026-03-25 12:19:05 | evaluator | 
+2026-03-25 12:19:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:19:05 | evaluator | CYCLE START
+2026-03-25 12:19:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:19:05 | evaluator | STEP 1: updater start
+2026-03-25 12:19:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:18:00
+2026-03-25 12:19:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:19:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:19:05 | evaluator | LTP_MAP_CYCLE | {54516: 282.0, 54517: 298.2}
+2026-03-25 12:19:05 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:19:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:19:05 | paper_trade | LTP_MAP_LIVE (shared) | {54516: 282.0, 54517: 298.2}
+2026-03-25 12:19:05 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:19:05 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:19:05 | paper_mtm | LTP_MAP_SHARED | {54516: 282.0, 54517: 298.2}
+2026-03-25 12:19:05 | paper_mtm | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-50.00 Total=-50.00
+2026-03-25 12:19:05 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:19:05 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:19:05 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:19:05 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:19:05 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:19:05 | paper_mtm_buy | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=-57.50 Total=-57.50
+2026-03-25 12:19:05 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:19:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:19:05 | evaluator | CYCLE END
+2026-03-25 12:19:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:19:05 | evaluator | 
+2026-03-25 12:20:05 | evaluator | 
+2026-03-25 12:20:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:20:05 | evaluator | CYCLE START
+2026-03-25 12:20:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:20:05 | evaluator | STEP 1: updater start
+2026-03-25 12:20:05 | spot_updater | SPOT_UPDATE: appended 2026-03-25 12:19:00
+2026-03-25 12:20:05 | evaluator | STEP 1: updater end | ok=True
+2026-03-25 12:20:05 | evaluator | MASTER_SIGNAL | signal=None regime=SELL_PE
+2026-03-25 12:20:05 | evaluator | LTP_MAP_CYCLE | {54516: 284.55, 54517: 296.35}
+2026-03-25 12:20:05 | evaluator | STEP 2: SELL paper_trade start
+2026-03-25 12:20:05 | paper_trade | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:20:05 | paper_trade | LTP_MAP_LIVE (shared) | {54516: 284.55, 54517: 296.35}
+2026-03-25 12:20:05 | evaluator | STEP 2: SELL paper_trade end
+2026-03-25 12:20:05 | evaluator | STEP 3: SELL mtm start
+2026-03-25 12:20:05 | paper_mtm | LTP_MAP_SHARED | {54516: 284.55, 54517: 296.35}
+2026-03-25 12:20:05 | paper_mtm | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=42.50 Total=42.50
+2026-03-25 12:20:05 | evaluator | STEP 3: SELL mtm end
+2026-03-25 12:20:05 | evaluator | STEP 4: BUY paper_trade start
+2026-03-25 12:20:05 | paper_trade_buy | SIGNAL_CHECK | signal=None regime=SELL_PE
+2026-03-25 12:20:05 | evaluator | STEP 4: BUY paper_trade end
+2026-03-25 12:20:05 | evaluator | STEP 5: BUY mtm start
+2026-03-25 12:20:05 | paper_mtm_buy | OPEN | SELL_PE | strike=23450 exp=2026-03-30 | Realised=0.00 Unrealised=70.00 Total=70.00
+2026-03-25 12:20:05 | evaluator | STEP 5: BUY mtm end
+2026-03-25 12:20:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:20:05 | evaluator | CYCLE END
+2026-03-25 12:20:05 | evaluator | ------------------------------------------------------------
+2026-03-25 12:20:05 | evaluator | 

@@ -1,6 +1,7 @@
 # nifty_evaluator.py
 
 import time
+import json
 import sys
 import subprocess
 from datetime import datetime, time as dtime, timedelta
@@ -15,7 +16,7 @@ from scripts.paper_mtm_engine_buy import run as run_buy_mtm
 from scripts.regime_classifier import load_last_candles
 from scripts.signal_engine import generate_signal
 from scripts.utils import fetch_ltp_map
-from scripts.paper_mtm_engine import load_open_position
+from scripts.option_resolver import get_atm_straddle
 
 # ---------------- CONFIG ----------------
 IST = ZoneInfo("Asia/Kolkata")
@@ -91,23 +92,61 @@ def run_cycle():
         # ==================================================
         security_ids = []
 
-        try:
-            pos = load_open_position()
-            if pos:
-                for leg in pos.get("legs", []):
-                    sid = int(leg.get("security_id"))
-                    if sid:
-                        security_ids.append(sid)
-        except Exception:
-            pass
+        # ---- SELL position ----
+        sell_file = BASE_DIR / "data" / "open_position.json"
+        if sell_file.exists():
+            try:
+                with sell_file.open() as f:
+                    pos = json.load(f)
+                if pos.get("status") == "OPEN":
+                    for leg in pos.get("legs", []):
+                        sid = int(leg.get("security_id"))
+                        if sid:
+                            security_ids.append(sid)
+            except Exception:
+                pass
+
+        # ---- BUY position ----
+        buy_file = BASE_DIR / "data" / "open_position_buy.json"
+        if buy_file.exists():
+            try:
+                with buy_file.open() as f:
+                    pos = json.load(f)
+                if pos.get("status") == "OPEN":
+                    for leg in pos.get("legs", []):
+                        sid = int(leg.get("security_id"))
+                        if sid:
+                            security_ids.append(sid)
+            except Exception:
+                pass
+
+        # ==================================================
+        # ⭐ ADD THIS BLOCK (NEW)
+        # ==================================================
+        if regime in ("SELL_PE", "SELL_CE"):
+            try:
+                spot = history[-1]["close"]
+                atm = get_atm_straddle(spot)
+
+                if regime == "SELL_PE":
+                    security_ids.append(atm["pe_security_id"])
+                    security_ids.append(atm["ce_security_id"])
+
+                elif regime == "SELL_CE":
+                    security_ids.append(atm["ce_security_id"])
+                    security_ids.append(atm["pe_security_id"])
+
+            except Exception:
+                pass
 
         # remove duplicates
         security_ids = list(set(security_ids))
 
+
         # ==================================================
         # ⭐ STEP 3: FETCH LTP ONCE
         # ==================================================
-        ltp_map = None
+        ltp_map = {}
         if security_ids:
             ltp_map = fetch_ltp_map(security_ids)
 

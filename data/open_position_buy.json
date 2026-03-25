@@ -7,10 +7,10 @@
   "entry_time": "2026-03-25 12:15:06",
   "legs": [
     {
-      "security_id": 54517,
-      "entry_price": 297.2,
+      "security_id": 54516,
+      "entry_price": 283.15,
       "lots": 1,
-      "type": "PE"
+      "type": "CE"
     }
   ]
 }

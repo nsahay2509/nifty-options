@@ -215,7 +215,7 @@ class PaperTradeEngine:
         if self.state == "FLAT":
 
             if regime in ("SELL_PE", "SELL_CE") and self.can_open_new(now):
-                self.enter_position(now, regime, history)
+                self.enter_position(now, regime, history, ltp_map)
 
             return
 
@@ -278,7 +278,7 @@ class PaperTradeEngine:
     # ==================================================
     # ENTRY
     # ==================================================
-    def enter_position(self, now: datetime, regime: str, history):
+    def enter_position(self, now: datetime, regime: str, history, ltp_map=None):
 
         spot = history[-1]["close"]
         atm = get_atm_straddle(spot)
@@ -296,7 +296,8 @@ class PaperTradeEngine:
 
         # ---- fetch entry LTPs BEFORE committing position ----
         security_ids = [x for x in (ce_id, pe_id) if x]
-        ltp_map = fetch_ltp_map(security_ids)
+        if ltp_map is None:
+            ltp_map = fetch_ltp_map(security_ids)
         logger.info(f"LTP_MAP_ENTRY | ids={security_ids} map={ltp_map}")
 
         # ---- strict validation: all legs must have LTP ----
