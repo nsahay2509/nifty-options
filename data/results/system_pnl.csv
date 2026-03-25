@@ -1,0 +1,2 @@
+timestamp,trade_id,state,regime,strike,expiry,realised,unrealised,total
+2026-03-25 11:47:06,20260325_114706,ENTRY,SELL_CE,23350,2026-03-30,0.00,0.00,0.00

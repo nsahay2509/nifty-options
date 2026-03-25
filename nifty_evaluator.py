@@ -107,7 +107,7 @@ def run_cycle():
         # ==================================================
         # ⭐ STEP 3: FETCH LTP ONCE
         # ==================================================
-        ltp_map = {}
+        ltp_map = None
         if security_ids:
             ltp_map = fetch_ltp_map(security_ids)
 

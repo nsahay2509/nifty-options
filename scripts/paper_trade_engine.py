@@ -68,7 +68,7 @@ class PaperTradeEngine:
         self.max_pnl = 0
         self.sync_from_disk()
 
-        logger.info("PaperTradeEngine initialized")
+        logger.info("\n\nPaperTradeEngine initialized")
 
     def sync_from_disk(self):
         if not OPEN_POS_FILE.exists():
@@ -214,8 +214,8 @@ class PaperTradeEngine:
 
         if self.state == "FLAT":
 
-            if signal in ("SELL_PE", "SELL_CE") and self.can_open_new(now):
-                self.enter_position(now, signal, history)
+            if regime in ("SELL_PE", "SELL_CE") and self.can_open_new(now):
+                self.enter_position(now, regime, history)
 
             return
 
@@ -224,7 +224,7 @@ class PaperTradeEngine:
 
             # ---- TRAILING PNL PROTECTION ----
             current_total = self.compute_live_pnl(ltp_map)
-            self.max_pnl = max(self.max_pnl, current_total)
+            self.max_pnl = max(self.max_pnl, self.get_current_total_pnl())
 
             drawdown = self.max_pnl - current_total
 

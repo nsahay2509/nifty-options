@@ -50,6 +50,14 @@ def get_logger(name: str) -> logging.Logger:
 
     # If already configured → reuse safely
     if logger.handlers:
+        # ensure file handler exists
+        has_file = any(isinstance(h, logging.FileHandler) for h in logger.handlers)
+
+        if not has_file:
+            file_handler = logging.FileHandler(LOG_FILE)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
         return logger
 
     logger.setLevel(logging.INFO)

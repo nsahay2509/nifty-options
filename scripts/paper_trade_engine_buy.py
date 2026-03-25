@@ -188,8 +188,8 @@ class PaperTradeEngine:
 
         if self.state == "FLAT":
 
-            if signal in ("SELL_PE", "SELL_CE") and self.can_open_new(now):
-                self.enter_position(now, signal, history)
+            if regime in ("SELL_PE", "SELL_CE") and self.can_open_new(now):
+                self.enter_position(now, regime, history)
 
             return
 
@@ -198,7 +198,7 @@ class PaperTradeEngine:
 
             # ---- TRAILING PNL PROTECTION ----
             current_total = self.compute_live_pnl(ltp_map)
-            self.max_pnl = max(self.max_pnl, current_total)
+            self.max_pnl = max(self.max_pnl, self.get_current_total_pnl())
 
             drawdown = self.max_pnl - current_total
 
@@ -253,33 +253,38 @@ class PaperTradeEngine:
     # ==================================================
     def enter_position(self, now: datetime, regime: str, history):
 
+        # ---- strict guard: only valid regimes ----
+        if regime not in ("SELL_PE", "SELL_CE"):
+            logger.warning(f"ENTRY_SKIPPED_INVALID_REGIME | {regime}")
+            return
+
         spot = history[-1]["close"]
         atm = get_atm_straddle(spot)
+
         self.max_pnl = 0
 
-        ce_id = None
-        pe_id = None
-
+        # ---- map regime → leg ----
         if regime == "SELL_PE":
             ce_id = atm["ce_security_id"]
-
-        elif regime == "SELL_CE":
+            pe_id = None
+        else:  # SELL_CE
             pe_id = atm["pe_security_id"]
+            ce_id = None
 
         trade_id = datetime.now(IST).strftime("%Y%m%d_%H%M%S")
 
         # ---- fetch LTP BEFORE creating position ----
-        security_ids = [x for x in (ce_id, pe_id) if x]
+        security_ids = [sid for sid in (ce_id, pe_id) if sid]
         ltp_map = fetch_ltp_map(security_ids)
 
         logger.info(f"LTP_MAP_ENTRY | ids={security_ids} map={ltp_map}")
 
-        # ---- STRICT validation (no partial trades) ----
-        if any(ltp_map.get(sid) is None for sid in security_ids):
-            logger.error(f"ENTRY_BLOCKED_LTP_INCOMPLETE | {ltp_map}")
+        # ---- strict validation (no partial / no None) ----
+        if not security_ids or any(ltp_map.get(sid) is None for sid in security_ids):
+            logger.error(f"ENTRY_BLOCKED_LTP_INVALID | {ltp_map}")
             return
 
-        # ---- now safe ----
+        # ---- create position ONLY after validation ----
         self.position = Position(
             trade_id=trade_id,
             regime=regime,
@@ -300,6 +305,7 @@ class PaperTradeEngine:
             f"ce_id={ce_id} pe_id={pe_id} lots={LOTS}"
         )
 
+        # ---- persist with valid prices ----
         self.write_open_position(self.position, ltp_map)
 
     # ==================================================

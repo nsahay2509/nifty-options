@@ -161,9 +161,13 @@ def run(ltp_map=None):
     security_ids = [int(l["security_id"]) for l in legs]
 
     # ---- use shared LTP ----
-    if ltp_map is None:
-        logger.warning("LTP_MAP_MISSING_FROM_EVALUATOR")
+    if not ltp_map:
+        logger.warning("LTP_MAP_EMPTY_FROM_EVALUATOR → fetching fallback")
         ltp_map = fetch_ltp_map(security_ids)
+
+        if all(v is None for v in ltp_map.values()):
+            logger.warning(f"LTP retry triggered | {security_ids}")
+            ltp_map = fetch_ltp_map(security_ids)
 
     LOT_SIZE = 50
     unrealised = 0.0
@@ -184,7 +188,7 @@ def run(ltp_map=None):
 
         if ltp is None:
             logger.error(f"LTP_MISSING | sid={sid} map={ltp_map}")
-            continue
+            return  # ❗ stop MTM for this cycle
 
         qty = LOT_SIZE * lots
         unrealised += (ltp - entry_price) * qty

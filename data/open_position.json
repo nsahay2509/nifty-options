@@ -1,0 +1,16 @@
+{
+  "status": "OPEN",
+  "trade_id": "20260325_114706",
+  "regime": "SELL_CE",
+  "strike": 23350,
+  "expiry": "2026-03-30",
+  "entry_time": "2026-03-25 11:47:05",
+  "legs": [
+    {
+      "security_id": 54512,
+      "entry_price": 299.75,
+      "lots": 1,
+      "type": "CE"
+    }
+  ]
+}
