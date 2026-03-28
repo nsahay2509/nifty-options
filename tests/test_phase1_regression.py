@@ -139,5 +139,21 @@ class BuyEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
                 buy_engine.BASE_DIR = old_base_dir
 
 
+class EngineMappingTests(unittest.TestCase):
+    def test_sell_and_buy_engines_keep_different_leg_mapping(self):
+        sell = sell_engine.PaperTradeEngine()
+        buy = buy_engine.PaperTradeEngine()
+
+        atm = {
+            "ce_security_id": 111,
+            "pe_security_id": 222,
+        }
+
+        self.assertEqual(sell.resolve_entry_ids("SELL_PE", atm), (None, 222))
+        self.assertEqual(sell.resolve_entry_ids("SELL_CE", atm), (111, None))
+        self.assertEqual(buy.resolve_entry_ids("SELL_PE", atm), (111, None))
+        self.assertEqual(buy.resolve_entry_ids("SELL_CE", atm), (None, 222))
+
+
 if __name__ == "__main__":
     unittest.main()
