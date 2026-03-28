@@ -28,6 +28,11 @@ TRADE_SUMMARY_BUY_FILE = RESULT_DIR / "trade_summary_buy.csv"
 DAILY_SUMMARY_BUY_FILE = RESULT_DIR / "daily_summary_buy.csv"
 TRADE_SUMMARY_COMBINED_FILE = RESULT_DIR / "trade_summary_combined.csv"
 DAILY_SUMMARY_COMBINED_FILE = RESULT_DIR / "daily_summary_combined.csv"
+TRADE_EVENTS_SELL_FILE = RESULT_DIR / "trade_events_sell.csv"
+TRADE_EVENTS_BUY_FILE = RESULT_DIR / "trade_events_buy.csv"
+TRADE_QUALITY_FILE = RESULT_DIR / "trade_quality_summary.csv"
+TRADE_QUALITY_BUY_FILE = RESULT_DIR / "trade_quality_summary_buy.csv"
+TRADE_QUALITY_COMBINED_FILE = RESULT_DIR / "trade_quality_summary_combined.csv"
 
 # approx cost per trade
 TRADE_COST = 100
@@ -194,6 +199,56 @@ def run_analysis(system_pnl_file, trade_summary_file, daily_summary_file):
     return trades
 
 
+def export_trade_quality_summary(source_file, target_file):
+    if not Path(source_file).exists():
+        with open(target_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "side",
+                "trade_id",
+                "regime",
+                "entry_signal",
+                "entry_time",
+                "exit_time",
+                "time_in_trade_min",
+                "strike",
+                "expiry",
+                "entry_spot",
+                "entry_direction_score",
+                "entry_bias",
+                "exit_reason",
+                "trade_pnl",
+            ])
+        return []
+
+    with open(source_file) as f:
+        rows = list(csv.DictReader(f))
+
+    with open(target_file, "w", newline="") as f:
+        fieldnames = [
+            "side",
+            "trade_id",
+            "regime",
+            "entry_signal",
+            "entry_time",
+            "exit_time",
+            "time_in_trade_min",
+            "strike",
+            "expiry",
+            "entry_spot",
+            "entry_direction_score",
+            "entry_bias",
+            "exit_reason",
+            "trade_pnl",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
+
+    return rows
+
+
 # ------------------------------------------------
 # MAIN
 # ------------------------------------------------
@@ -223,6 +278,45 @@ def main():
     update_daily_summary(combined_trades, DAILY_SUMMARY_COMBINED_FILE)
     print("Combined trade summary updated:", TRADE_SUMMARY_COMBINED_FILE)
     print("Combined daily summary updated:", DAILY_SUMMARY_COMBINED_FILE)
+
+    sell_quality = export_trade_quality_summary(
+        TRADE_EVENTS_SELL_FILE,
+        TRADE_QUALITY_FILE,
+    )
+    print("Sell trade quality summary updated:", TRADE_QUALITY_FILE)
+
+    buy_quality = export_trade_quality_summary(
+        TRADE_EVENTS_BUY_FILE,
+        TRADE_QUALITY_BUY_FILE,
+    )
+    print("Buy trade quality summary updated:", TRADE_QUALITY_BUY_FILE)
+
+    combined_quality = sorted(
+        sell_quality + buy_quality,
+        key=lambda row: (row.get("entry_time", ""), row.get("trade_id", ""), row.get("side", "")),
+    )
+    with open(TRADE_QUALITY_COMBINED_FILE, "w", newline="") as f:
+        fieldnames = [
+            "side",
+            "trade_id",
+            "regime",
+            "entry_signal",
+            "entry_time",
+            "exit_time",
+            "time_in_trade_min",
+            "strike",
+            "expiry",
+            "entry_spot",
+            "entry_direction_score",
+            "entry_bias",
+            "exit_reason",
+            "trade_pnl",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in combined_quality:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
+    print("Combined trade quality summary updated:", TRADE_QUALITY_COMBINED_FILE)
 
 
 if __name__ == "__main__":

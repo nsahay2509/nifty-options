@@ -27,6 +27,12 @@ class PaperTradeEngine(BasePaperTradeEngine):
     def get_pnl_file(self) -> Path:
         return BASE_DIR / "data" / "results" / "system_pnl_buy.csv"
 
+    def get_trade_events_file(self) -> Path:
+        return BASE_DIR / "data" / "results" / "trade_events_buy.csv"
+
+    def get_side(self) -> str:
+        return "BUY"
+
     def get_reset_log_message(self, old_date, new_date) -> str:
         return f"New trading day detected | resetting buy engine state from {old_date} to {new_date}"
 

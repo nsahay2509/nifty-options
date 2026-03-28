@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time as dtime
+import csv
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from scripts.logger import get_logger
 from scripts.option_resolver import get_atm_straddle
+from scripts.regime_classifier import bias as regime_bias
 from scripts.regime_classifier import TREND_D_MIN, direction_score, load_last_candles
 from scripts.state_utils import atomic_write_json, safe_load_json
 from scripts.utils import fetch_ltp_map
@@ -19,6 +21,12 @@ FORCE_EXIT_TIME = dtime(15, 25)
 WINDOW = 25
 COOLDOWN_MINUTES = 5
 LOTS = 1
+MIN_HOLD_MINUTES = 3
+MAX_TRADE_LOSS = 600.0
+PROFIT_TRAIL_ARM = 400.0
+PROFIT_TRAIL_GIVEBACK = 250.0
+REENTRY_BLOCK_MINUTES = 15
+REENTRY_MIN_D_IMPROVEMENT = 0.05
 
 
 @dataclass
@@ -31,6 +39,11 @@ class Position:
     pe_security_id: int | None
     entry_time: datetime
     lots: int = LOTS
+    side: str = ""
+    entry_signal: str | None = None
+    entry_spot: float = 0.0
+    entry_direction_score: float = 0.0
+    entry_bias: float = 0.0
 
 
 class BasePaperTradeEngine:
@@ -48,6 +61,9 @@ class BasePaperTradeEngine:
         self.active_regime: str | None = None
         self.max_pnl = 0
         self.session_date = self.now().date()
+        self.last_exit_regime: str | None = None
+        self.last_exit_time: datetime | None = None
+        self.last_exit_direction_score: float | None = None
         self.sync_from_disk()
         self.logger.info("PaperTradeEngine initialized")
 
@@ -64,6 +80,12 @@ class BasePaperTradeEngine:
         raise NotImplementedError
 
     def get_pnl_file(self) -> Path:
+        raise NotImplementedError
+
+    def get_trade_events_file(self) -> Path:
+        raise NotImplementedError
+
+    def get_side(self) -> str:
         raise NotImplementedError
 
     def get_reset_log_message(self, old_date, new_date) -> str:
@@ -111,6 +133,11 @@ class BasePaperTradeEngine:
                 pe_security_id=int(pe_leg["security_id"]) if pe_leg else None,
                 entry_time=entry_time,
                 lots=int((ce_leg or pe_leg or {}).get("lots", LOTS)),
+                side=data.get("side", self.get_side()),
+                entry_signal=data.get("entry_signal"),
+                entry_spot=float(data.get("entry_spot", 0.0)),
+                entry_direction_score=float(data.get("entry_direction_score", 0.0)),
+                entry_bias=float(data.get("entry_bias", 0.0)),
             )
             self.state = "IN_POSITION"
             self.active_regime = data.get("regime")
@@ -166,6 +193,11 @@ class BasePaperTradeEngine:
             "strike": pos.strike,
             "expiry": pos.expiry,
             "entry_time": pos.entry_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "side": pos.side,
+            "entry_signal": pos.entry_signal,
+            "entry_spot": pos.entry_spot,
+            "entry_direction_score": pos.entry_direction_score,
+            "entry_bias": pos.entry_bias,
             "legs": legs,
         }
 
@@ -187,6 +219,71 @@ class BasePaperTradeEngine:
         self.state = "FLAT"
         self.position = None
         self.active_regime = None
+        self.max_pnl = 0
+
+    def get_minutes_in_trade(self, now: datetime) -> float:
+        if not self.position:
+            return 0.0
+        return (now - self.position.entry_time).total_seconds() / 60
+
+    def can_take_same_side_reentry(self, now: datetime, regime: str, d: float) -> bool:
+        if regime != self.last_exit_regime or self.last_exit_time is None:
+            return True
+
+        blocked_until = self.last_exit_time + timedelta(minutes=REENTRY_BLOCK_MINUTES)
+        if now >= blocked_until:
+            return True
+
+        last_d = self.last_exit_direction_score if self.last_exit_direction_score is not None else 0.0
+        if d >= last_d + REENTRY_MIN_D_IMPROVEMENT:
+            return True
+
+        self.logger.info(
+            f"REENTRY_BLOCKED | regime={regime} d={d:.3f} last_d={last_d:.3f} until={blocked_until.strftime('%H:%M:%S')}"
+        )
+        return False
+
+    def append_trade_event(self, event: dict):
+        path = self.get_trade_events_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_header = not path.exists()
+
+        with path.open("a", newline="") as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow([
+                    "side",
+                    "trade_id",
+                    "regime",
+                    "entry_signal",
+                    "entry_time",
+                    "exit_time",
+                    "time_in_trade_min",
+                    "strike",
+                    "expiry",
+                    "entry_spot",
+                    "entry_direction_score",
+                    "entry_bias",
+                    "exit_reason",
+                    "trade_pnl",
+                ])
+
+            writer.writerow([
+                event["side"],
+                event["trade_id"],
+                event["regime"],
+                event["entry_signal"],
+                event["entry_time"],
+                event["exit_time"],
+                event["time_in_trade_min"],
+                event["strike"],
+                event["expiry"],
+                event["entry_spot"],
+                event["entry_direction_score"],
+                event["entry_bias"],
+                event["exit_reason"],
+                event["trade_pnl"],
+            ])
 
     def check_for_stale_position(self, now: datetime):
         try:
@@ -241,30 +338,50 @@ class BasePaperTradeEngine:
 
         self.logger.info(f"SIGNAL_CHECK | signal={signal} regime={regime}")
 
+        current_d = direction_score(history)
+
         if self.state == "FLAT":
-            if self.is_tradeable_regime(regime) and self.can_open_new(now):
-                self.enter_position(now, regime, history, ltp_map)
+            if (
+                signal
+                and signal == regime
+                and self.is_tradeable_regime(signal)
+                and self.can_open_new(now)
+                and self.can_take_same_side_reentry(now, signal, current_d)
+            ):
+                self.enter_position(now, signal, history, ltp_map, signal=signal)
             return
 
         if self.state != "IN_POSITION":
             return
 
         current_total = self.compute_live_pnl(ltp_map)
-        self.max_pnl = max(self.max_pnl, self.get_current_total_pnl())
+        self.max_pnl = max(self.max_pnl, current_total)
 
-        drawdown = self.max_pnl - current_total
-        if drawdown > 800:
-            self.exit_position(now, reason=f"TRAIL_DD {drawdown:.2f}")
+        if current_total <= -MAX_TRADE_LOSS:
+            self.exit_position(now, reason=f"HARD_STOP {current_total:.2f}", ltp_map=ltp_map)
             self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
             self.state = "COOLDOWN"
             self.logger.info(
-                f"Trailing DD hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+                f"Hard stop hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
             )
             return
 
-        d = direction_score(history)
-        if self.active_regime in ("SELL_PE", "SELL_CE") and d < TREND_D_MIN:
-            self.exit_position(now, reason=f"TREND_WEAK d={d:.2f}")
+        drawdown = self.max_pnl - current_total
+        minutes_in_trade = self.get_minutes_in_trade(now)
+        if minutes_in_trade >= MIN_HOLD_MINUTES and self.max_pnl >= PROFIT_TRAIL_ARM and drawdown >= PROFIT_TRAIL_GIVEBACK:
+            self.exit_position(now, reason=f"TRAIL_PROFIT {drawdown:.2f}", ltp_map=ltp_map)
+            self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+            self.state = "COOLDOWN"
+            self.logger.info(
+                f"Profit trail hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+            )
+            return
+
+        if minutes_in_trade < MIN_HOLD_MINUTES:
+            return
+
+        if self.active_regime in ("SELL_PE", "SELL_CE") and current_d < TREND_D_MIN:
+            self.exit_position(now, reason=f"TREND_WEAK d={current_d:.2f}", ltp_map=ltp_map)
             self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
             self.state = "COOLDOWN"
             self.logger.info(
@@ -279,6 +396,7 @@ class BasePaperTradeEngine:
             self.exit_position(
                 now,
                 reason=f"REGIME_CHANGE {self.active_regime}->{regime}",
+                ltp_map=ltp_map,
             )
             self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
             self.state = "COOLDOWN"
@@ -286,13 +404,15 @@ class BasePaperTradeEngine:
                 f"Entering cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
             )
 
-    def enter_position(self, now: datetime, regime: str, history, ltp_map=None):
+    def enter_position(self, now: datetime, regime: str, history, ltp_map=None, signal=None):
         if not self.is_tradeable_regime(regime):
             if self.entry_invalid_regime_message:
                 self.logger.warning(self.entry_invalid_regime_message.format(regime=regime))
             return
 
         spot = history[-1]["close"]
+        d = direction_score(history)
+        b = regime_bias(history)
         atm = get_atm_straddle(spot)
         self.max_pnl = 0
         ce_id, pe_id = self.resolve_entry_ids(regime, atm)
@@ -317,6 +437,11 @@ class BasePaperTradeEngine:
             pe_security_id=pe_id,
             entry_time=now,
             lots=LOTS,
+            side=self.get_side(),
+            entry_signal=signal,
+            entry_spot=float(spot),
+            entry_direction_score=float(d),
+            entry_bias=float(b),
         )
 
         self.state = "IN_POSITION"
@@ -324,16 +449,37 @@ class BasePaperTradeEngine:
         self.logger.info(self.format_entry_message(regime, spot, atm, ce_id, pe_id))
         self.write_open_position(self.position, ltp_map)
 
-    def exit_position(self, now: datetime, reason: str):
+    def exit_position(self, now: datetime, reason: str, ltp_map=None):
         if not self.position:
             return
 
         p = self.position
+        live_pnl = self.compute_live_pnl(ltp_map)
         self.logger.info(
             f"EXIT | {p.regime} | strike={p.strike} "
             f"exp={p.expiry} lots={p.lots} reason={reason}"
         )
 
+        self.append_trade_event({
+            "side": p.side or self.get_side(),
+            "trade_id": p.trade_id,
+            "regime": p.regime,
+            "entry_signal": p.entry_signal or "",
+            "entry_time": p.entry_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "exit_time": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "time_in_trade_min": max(1, int(round(self.get_minutes_in_trade(now)))),
+            "strike": p.strike,
+            "expiry": p.expiry,
+            "entry_spot": round(p.entry_spot, 2),
+            "entry_direction_score": round(p.entry_direction_score, 4),
+            "entry_bias": round(p.entry_bias, 2),
+            "exit_reason": reason,
+            "trade_pnl": round(live_pnl, 2),
+        })
+
+        self.last_exit_regime = p.regime
+        self.last_exit_time = now
+        self.last_exit_direction_score = p.entry_direction_score
         self.close_open_position()
         self.position = None
         self.active_regime = None
