@@ -23,6 +23,11 @@ RESULT_DIR = BASE_DIR / "data" / "results"
 SYSTEM_PNL_FILE = RESULT_DIR / "system_pnl.csv"
 TRADE_SUMMARY_FILE = RESULT_DIR / "trade_summary.csv"
 DAILY_SUMMARY_FILE = RESULT_DIR / "daily_summary.csv"
+SYSTEM_PNL_BUY_FILE = RESULT_DIR / "system_pnl_buy.csv"
+TRADE_SUMMARY_BUY_FILE = RESULT_DIR / "trade_summary_buy.csv"
+DAILY_SUMMARY_BUY_FILE = RESULT_DIR / "daily_summary_buy.csv"
+TRADE_SUMMARY_COMBINED_FILE = RESULT_DIR / "trade_summary_combined.csv"
+DAILY_SUMMARY_COMBINED_FILE = RESULT_DIR / "daily_summary_combined.csv"
 
 # approx cost per trade
 TRADE_COST = 100
@@ -36,12 +41,15 @@ def parse_time(ts):
 # PARSE SYSTEM PNL
 # ------------------------------------------------
 
-def extract_trades():
+def extract_trades(system_pnl_file):
 
     trades = []
     current_trade = None
 
-    with open(SYSTEM_PNL_FILE) as f:
+    if not Path(system_pnl_file).exists():
+        return trades
+
+    with open(system_pnl_file) as f:
 
         reader = csv.reader(f)
         next(reader, None)  # skip header
@@ -99,43 +107,21 @@ def extract_trades():
 # UPDATE TRADE SUMMARY
 # ------------------------------------------------
 
-def update_trade_summary(trades):
-
-    existing_ids = set()
-
-    if TRADE_SUMMARY_FILE.exists():
-
-        with open(TRADE_SUMMARY_FILE) as f:
-            reader = csv.reader(f)
-            next(reader, None)
-
-            for row in reader:
-                if row:
-                    existing_ids.add(row[0])
-
-    write_header = not TRADE_SUMMARY_FILE.exists()
-
-    with open(TRADE_SUMMARY_FILE, "a", newline="") as f:
-
+def update_trade_summary(trades, trade_summary_file):
+    with open(trade_summary_file, "w", newline="") as f:
         writer = csv.writer(f)
+        writer.writerow([
+            "trade_id",
+            "entry_time",
+            "exit_time",
+            "time_in_trade_min",
+            "trade_type",
+            "strike",
+            "expiry",
+            "trade_pnl",
+        ])
 
-        if write_header:
-            writer.writerow([
-                "trade_id",
-                "entry_time",
-                "exit_time",
-                "time_in_trade_min",
-                "trade_type",
-                "strike",
-                "expiry",
-                "trade_pnl",
-            ])
-
-        for t in trades:
-
-            if t["trade_id"] in existing_ids:
-                continue
-
+        for t in sorted(trades, key=lambda trade: (trade["entry_time"], trade["trade_id"])):
             writer.writerow([
                 t["trade_id"],
                 t["entry_time"],
@@ -152,7 +138,7 @@ def update_trade_summary(trades):
 # UPDATE DAILY SUMMARY
 # ------------------------------------------------
 
-def update_daily_summary(trades):
+def update_daily_summary(trades, daily_summary_file):
 
     daily = defaultdict(list)
 
@@ -161,16 +147,6 @@ def update_daily_summary(trades):
         daily[date].append(t)
 
     existing_rows = {}
-
-    if DAILY_SUMMARY_FILE.exists():
-
-        with open(DAILY_SUMMARY_FILE) as f:
-            reader = csv.reader(f)
-            next(reader, None)
-
-            for row in reader:
-                if row:
-                    existing_rows[row[0]] = row
 
     for date, trade_list in daily.items():
 
@@ -193,7 +169,7 @@ def update_daily_summary(trades):
             round(net_pnl, 2),
         ]
 
-    with open(DAILY_SUMMARY_FILE, "w", newline="") as f:
+    with open(daily_summary_file, "w", newline="") as f:
 
         writer = csv.writer(f)
 
@@ -211,19 +187,42 @@ def update_daily_summary(trades):
             writer.writerow(row)
 
 
+def run_analysis(system_pnl_file, trade_summary_file, daily_summary_file):
+    trades = extract_trades(system_pnl_file)
+    update_trade_summary(trades, trade_summary_file)
+    update_daily_summary(trades, daily_summary_file)
+    return trades
+
+
 # ------------------------------------------------
 # MAIN
 # ------------------------------------------------
 
 def main():
+    sell_trades = run_analysis(
+        SYSTEM_PNL_FILE,
+        TRADE_SUMMARY_FILE,
+        DAILY_SUMMARY_FILE,
+    )
+    print("Sell trade summary updated:", TRADE_SUMMARY_FILE)
+    print("Sell daily summary updated:", DAILY_SUMMARY_FILE)
 
-    trades = extract_trades()
+    buy_trades = run_analysis(
+        SYSTEM_PNL_BUY_FILE,
+        TRADE_SUMMARY_BUY_FILE,
+        DAILY_SUMMARY_BUY_FILE,
+    )
+    print("Buy trade summary updated:", TRADE_SUMMARY_BUY_FILE)
+    print("Buy daily summary updated:", DAILY_SUMMARY_BUY_FILE)
 
-    update_trade_summary(trades)
-    update_daily_summary(trades)
-
-    print("Trade summary updated:", TRADE_SUMMARY_FILE)
-    print("Daily summary updated:", DAILY_SUMMARY_FILE)
+    combined_trades = sorted(
+        sell_trades + buy_trades,
+        key=lambda trade: (trade["entry_time"], trade["trade_id"]),
+    )
+    update_trade_summary(combined_trades, TRADE_SUMMARY_COMBINED_FILE)
+    update_daily_summary(combined_trades, DAILY_SUMMARY_COMBINED_FILE)
+    print("Combined trade summary updated:", TRADE_SUMMARY_COMBINED_FILE)
+    print("Combined daily summary updated:", DAILY_SUMMARY_COMBINED_FILE)
 
 
 if __name__ == "__main__":

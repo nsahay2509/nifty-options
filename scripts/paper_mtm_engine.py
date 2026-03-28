@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from scripts.logger import get_logger
 from scripts.state_utils import atomic_write_json, safe_load_json
+from scripts.utils import ensure_complete_ltp_map
 
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -147,9 +148,16 @@ def run(ltp_map=None):
 
     security_ids = [int(l["security_id"]) for l in legs]
 
-    ltp_map = ltp_map or {}
-
+    ltp_map, ltp_complete = ensure_complete_ltp_map(
+        security_ids,
+        ltp_map=ltp_map,
+        logger=logger,
+    )
     logger.info(f"LTP_MAP_SHARED | {ltp_map}")
+
+    if not ltp_complete:
+        logger.error(f"LTP_INCOMPLETE_SKIP_MTM | ids={security_ids} map={ltp_map}")
+        return
 
     LOT_SIZE = 50
     unrealised = 0.0
@@ -169,7 +177,7 @@ def run(ltp_map=None):
 
         if ltp is None:
             logger.error(f"LTP_MISSING_SHARED | sid={sid} map={ltp_map}")
-            continue
+            return
 
         qty = LOT_SIZE * lots
         unrealised += (entry_price - ltp) * qty  # short MTM

@@ -2,6 +2,7 @@
 
 
 import os
+import time
 from typing import Dict, List, Optional
 
 import requests
@@ -92,3 +93,53 @@ def fetch_ltp_map(
             out[sid] = float(lp) if lp is not None else None
 
     return out
+
+
+def ensure_complete_ltp_map(
+    security_ids: List[int],
+    *,
+    ltp_map: Optional[Dict[int, Optional[float]]] = None,
+    exchange_segment: str = "NSE_FNO",
+    timeout: int = 10,
+    retry_delay_sec: float = 0.3,
+    fetcher=None,
+    sleep_fn=None,
+    logger=None,
+):
+    """
+    Ensure we have a complete LTP map for the requested security ids.
+
+    Returns:
+      (ltp_map, is_complete)
+    """
+    security_ids = [int(sid) for sid in security_ids]
+    merged = dict(ltp_map or {})
+
+    if not security_ids:
+        return merged, True
+
+    fetch = fetcher or (
+        lambda ids: fetch_ltp_map(
+            ids,
+            exchange_segment=exchange_segment,
+            timeout=timeout,
+        )
+    )
+    sleeper = sleep_fn or time.sleep
+
+    missing_ids = [sid for sid in security_ids if merged.get(sid) is None]
+
+    if missing_ids:
+        if logger:
+            logger.warning(f"LTP_MAP_INCOMPLETE -> fetching fallback for {missing_ids}")
+        merged.update(fetch(missing_ids))
+        missing_ids = [sid for sid in security_ids if merged.get(sid) is None]
+
+    if missing_ids:
+        if logger:
+            logger.warning(f"LTP_MAP_RETRY -> retrying fallback for {missing_ids}")
+        sleeper(retry_delay_sec)
+        merged.update(fetch(missing_ids))
+        missing_ids = [sid for sid in security_ids if merged.get(sid) is None]
+
+    return merged, not missing_ids

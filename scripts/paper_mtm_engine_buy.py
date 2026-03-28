@@ -9,7 +9,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from scripts.logger import get_logger
-from scripts.utils import fetch_ltp_map
+from scripts.utils import ensure_complete_ltp_map
 from scripts.state_utils import atomic_write_json, safe_load_json
 
 
@@ -153,14 +153,15 @@ def run(ltp_map=None):
 
     security_ids = [int(l["security_id"]) for l in legs]
 
-    # ---- use shared LTP ----
-    if not ltp_map:
-        logger.warning("LTP_MAP_EMPTY_FROM_EVALUATOR → fetching fallback")
-        ltp_map = fetch_ltp_map(security_ids)
+    ltp_map, ltp_complete = ensure_complete_ltp_map(
+        security_ids,
+        ltp_map=ltp_map,
+        logger=logger,
+    )
 
-        if all(v is None for v in ltp_map.values()):
-            logger.warning(f"LTP retry triggered | {security_ids}")
-            ltp_map = fetch_ltp_map(security_ids)
+    if not ltp_complete:
+        logger.error(f"LTP_INCOMPLETE_SKIP_MTM | ids={security_ids} map={ltp_map}")
+        return
 
     LOT_SIZE = 50
     unrealised = 0.0
