@@ -6,7 +6,8 @@ import time
 from typing import Dict, List, Optional
 
 import requests
-from dotenv import load_dotenv
+
+from scripts.runtime_config import load_runtime_env
 
 
 # ---------- dynamic dhan headers ----------
@@ -15,7 +16,7 @@ def get_dhan_headers() -> dict:
     Always reload Dhan credentials from .env.
     Prevents stale access-token after daily refresh.
     """
-    load_dotenv("/home/ubuntu/nseo/.env", override=True)
+    load_runtime_env(override=True)
 
     token = os.getenv("DHAN_ACCESS_TOKEN")
     client_id = os.getenv("DHAN_CLIENT_ID")

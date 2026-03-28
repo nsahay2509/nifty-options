@@ -3,11 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.analyze_trades import (
-    run_analysis,
-    update_daily_summary,
-    update_trade_summary,
-)
+from scripts.analyze_trades import run_analysis, update_daily_summary, update_trade_summary
 from scripts.utils import ensure_complete_ltp_map
 
 

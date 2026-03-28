@@ -15,8 +15,9 @@ from scripts.paper_trade_engine_buy import run as run_buy_trade
 from scripts.paper_mtm_engine_buy import run as run_buy_mtm
 from scripts.regime_classifier import load_last_candles
 from scripts.signal_engine import generate_signal
-from scripts.utils import fetch_ltp_map
+from scripts.utils import ensure_complete_ltp_map
 from scripts.option_resolver import get_atm_straddle
+from scripts.state_utils import safe_load_json
 
 # ---------------- CONFIG ----------------
 IST = ZoneInfo("Asia/Kolkata")
@@ -69,6 +70,52 @@ def run_updater():
         return False
 
 
+def collect_open_position_security_ids(position_file: Path, label: str) -> list[int]:
+    position = safe_load_json(position_file, None)
+    if not position:
+        return []
+
+    if position.get("status") != "OPEN":
+        return []
+
+    security_ids = []
+
+    for leg in position.get("legs", []):
+        raw_sid = leg.get("security_id")
+        try:
+            sid = int(raw_sid)
+        except (TypeError, ValueError):
+            logger.warning(
+                f"{label}_POSITION_INVALID_SECURITY_ID | file={position_file.name} leg={leg}"
+            )
+            continue
+
+        security_ids.append(sid)
+
+    return security_ids
+
+
+def collect_regime_security_ids(regime, history) -> list[int]:
+    if regime not in ("SELL_PE", "SELL_CE"):
+        return []
+
+    if not history:
+        logger.warning("REGIME_SECURITY_COLLECTION_SKIPPED | history_empty")
+        return []
+
+    try:
+        spot = history[-1]["close"]
+        atm = get_atm_straddle(spot)
+    except Exception as exc:
+        logger.exception(f"REGIME_SECURITY_COLLECTION_FAILED | regime={regime} error={exc}")
+        return []
+
+    if regime == "SELL_PE":
+        return [atm["pe_security_id"], atm["ce_security_id"]]
+
+    return [atm["ce_security_id"], atm["pe_security_id"]]
+
+
 def run_cycle():
 
     logger.info("")
@@ -92,52 +139,13 @@ def run_cycle():
         # ==================================================
         security_ids = []
 
-        # ---- SELL position ----
         sell_file = BASE_DIR / "data" / "open_position.json"
-        if sell_file.exists():
-            try:
-                with sell_file.open() as f:
-                    pos = json.load(f)
-                if pos.get("status") == "OPEN":
-                    for leg in pos.get("legs", []):
-                        sid = int(leg.get("security_id"))
-                        if sid:
-                            security_ids.append(sid)
-            except Exception:
-                pass
+        security_ids.extend(collect_open_position_security_ids(sell_file, "SELL"))
 
-        # ---- BUY position ----
         buy_file = BASE_DIR / "data" / "open_position_buy.json"
-        if buy_file.exists():
-            try:
-                with buy_file.open() as f:
-                    pos = json.load(f)
-                if pos.get("status") == "OPEN":
-                    for leg in pos.get("legs", []):
-                        sid = int(leg.get("security_id"))
-                        if sid:
-                            security_ids.append(sid)
-            except Exception:
-                pass
+        security_ids.extend(collect_open_position_security_ids(buy_file, "BUY"))
 
-        # ==================================================
-        # ⭐ ADD THIS BLOCK (NEW)
-        # ==================================================
-        if regime in ("SELL_PE", "SELL_CE"):
-            try:
-                spot = history[-1]["close"]
-                atm = get_atm_straddle(spot)
-
-                if regime == "SELL_PE":
-                    security_ids.append(atm["pe_security_id"])
-                    security_ids.append(atm["ce_security_id"])
-
-                elif regime == "SELL_CE":
-                    security_ids.append(atm["ce_security_id"])
-                    security_ids.append(atm["pe_security_id"])
-
-            except Exception:
-                pass
+        security_ids.extend(collect_regime_security_ids(regime, history))
 
         # remove duplicates
         security_ids = list(set(security_ids))
@@ -148,14 +156,12 @@ def run_cycle():
         # ==================================================
         ltp_map = {}
         if security_ids:
-            ltp_map = fetch_ltp_map(security_ids)
-
-            # retry once if fully empty
-            if all(v is None for v in ltp_map.values()):
-                logger.warning("EVALUATOR LTP retry triggered")
-                import time
-                time.sleep(0.3)
-                ltp_map = fetch_ltp_map(security_ids)
+            ltp_map, complete = ensure_complete_ltp_map(
+                security_ids,
+                logger=logger,
+            )
+            if not complete:
+                logger.warning(f"EVALUATOR_LTP_INCOMPLETE | ids={security_ids} map={ltp_map}")
 
         logger.info(f"LTP_MAP_CYCLE | {ltp_map}")
 
