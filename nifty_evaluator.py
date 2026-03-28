@@ -201,7 +201,7 @@ def run_cycle():
 def main():
 
     logger.info("NIFTY Evaluator Started")
-    logger.info("Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +2 sec")
+    logger.info(f"Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +{RUN_DELAY_SEC} sec")
     logger.info("-" * 60)
 
     while True:

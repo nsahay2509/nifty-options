@@ -8,6 +8,7 @@ import json
 from zoneinfo import ZoneInfo
 
 from scripts.regime_classifier import classify_regime
+from scripts.state_utils import atomic_write_json
 
 
 # ---------------- CONFIG ----------------
@@ -44,8 +45,7 @@ def load_state():
 
 
 def save_state(state):
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state))
+    atomic_write_json(STATE_FILE, state)
 
 
 # ---------------- CORE ENGINE ----------------

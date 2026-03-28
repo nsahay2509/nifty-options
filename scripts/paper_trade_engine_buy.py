@@ -14,6 +14,7 @@ from scripts.option_resolver import get_atm_straddle
 from scripts.utils import fetch_ltp_map
 from scripts.logger import get_logger
 from scripts.regime_classifier import direction_score, TREND_D_MIN
+from scripts.state_utils import atomic_write_json, safe_load_json
 
 
 # ==================================================
@@ -67,8 +68,57 @@ class PaperTradeEngine:
         self.cooldown_until: datetime | None = None
         self.active_regime: str | None = None
         self.max_pnl = 0
+        self.session_date = self.now().date()
+        self.sync_from_disk()
 
         logger.info("PaperTradeEngine initialized")
+
+    def sync_from_disk(self):
+        data = safe_load_json(OPEN_POS_FILE, None)
+        if not data or data.get("status") != "OPEN":
+            return
+
+        try:
+            entry_time = datetime.strptime(
+                data["entry_time"],
+                "%Y-%m-%d %H:%M:%S",
+            ).replace(tzinfo=IST)
+            legs = data.get("legs", [])
+
+            ce_leg = next((leg for leg in legs if leg.get("type") == "CE"), None)
+            pe_leg = next((leg for leg in legs if leg.get("type") == "PE"), None)
+
+            self.position = Position(
+                trade_id=data["trade_id"],
+                regime=data["regime"],
+                strike=int(data["strike"]),
+                expiry=data["expiry"],
+                ce_security_id=int(ce_leg["security_id"]) if ce_leg else None,
+                pe_security_id=int(pe_leg["security_id"]) if pe_leg else None,
+                entry_time=entry_time,
+                lots=int((ce_leg or pe_leg or {}).get("lots", LOTS)),
+            )
+            self.state = "IN_POSITION"
+            self.active_regime = data.get("regime")
+            self.max_pnl = self.get_current_total_pnl()
+            logger.warning("Recovered OPEN buy position from disk")
+        except Exception:
+            logger.exception("OPEN_BUY_POSITION_RECOVERY_FAILED")
+
+    def reset_for_new_day(self, now: datetime):
+        if now.date() == self.session_date:
+            return
+
+        logger.info(
+            f"New trading day detected | resetting buy engine state from {self.session_date} to {now.date()}"
+        )
+        self.state = "FLAT"
+        self.position = None
+        self.cooldown_until = None
+        self.active_regime = None
+        self.max_pnl = 0
+        self.session_date = now.date()
+        self.sync_from_disk()
 
     # ------------------------------------------------
     def now(self) -> datetime:
@@ -123,24 +173,18 @@ class PaperTradeEngine:
             "legs": legs,
         }
 
-        with OPEN_POS_FILE.open("w") as f:
-            json.dump(payload, f, indent=2)
+        atomic_write_json(OPEN_POS_FILE, payload, indent=2)
 
     def close_open_position(self):
         if not OPEN_POS_FILE.exists():
             return
 
-        try:
-            with OPEN_POS_FILE.open() as f:
-                data = json.load(f)
+        data = safe_load_json(OPEN_POS_FILE, None)
+        if not data:
+            return
 
-            data["status"] = "CLOSED"
-
-            with OPEN_POS_FILE.open("w") as f:
-                json.dump(data, f, indent=2)
-
-        except Exception:
-            pass
+        data["status"] = "CLOSED"
+        atomic_write_json(OPEN_POS_FILE, data, indent=2)
 
     # ==================================================
     # MAIN TICK
@@ -148,6 +192,26 @@ class PaperTradeEngine:
     def tick(self, signal=None, regime=None, history=None, ltp_map=None):
 
         now = self.now()
+        self.reset_for_new_day(now)
+
+        # ---- HARD STALE POSITION CLEANUP (new day safety) ----
+        try:
+            if OPEN_POS_FILE.exists():
+                data = safe_load_json(OPEN_POS_FILE, {})
+
+                if data.get("status") == "OPEN":
+                    entry_time = data.get("entry_time", "")
+                    entry_date = entry_time[:10]
+                    today = now.strftime("%Y-%m-%d")
+
+                    if entry_date and entry_date != today:
+                        logger.warning("STALE BUY POSITION DETECTED -> FORCE CLOSE")
+                        self.close_open_position()
+                        self.state = "FLAT"
+                        self.position = None
+                        self.active_regime = None
+        except Exception:
+            logger.exception("STALE_BUY_POSITION_CHECK_FAILED")
 
         # ---- before scan window ----
         if now.time() < START_SCAN:
@@ -350,8 +414,7 @@ class PaperTradeEngine:
         ltp_map = ltp_map or {}
 
         try:
-            with OPEN_POS_FILE.open() as f:
-                pos = json.load(f)
+            pos = safe_load_json(OPEN_POS_FILE, {})
         except Exception:
             return 0
 

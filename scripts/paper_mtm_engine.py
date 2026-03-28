@@ -4,7 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from scripts.logger import get_logger
-from scripts.utils import fetch_ltp_map
+from scripts.state_utils import atomic_write_json, safe_load_json
 
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -24,13 +24,7 @@ RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
 # STATE HELPERS
 # ==================================================
 def _safe_load_json(path: Path, default):
-    if not path.exists():
-        return default
-    try:
-        with path.open() as f:
-            return json.load(f)
-    except Exception:
-        return default
+    return safe_load_json(path, default)
 
 
 def load_last_state():
@@ -38,8 +32,7 @@ def load_last_state():
 
 
 def save_last_state(state: dict):
-    with LAST_STATE_FILE.open("w") as f:
-        json.dump(state, f)
+    atomic_write_json(LAST_STATE_FILE, state)
 
 
 def load_realised() -> float:
@@ -57,11 +50,10 @@ def load_realised() -> float:
 def save_realised(val: float):
     today = datetime.now(IST).strftime("%Y-%m-%d")
 
-    with PNL_STATE_FILE.open("w") as f:
-        json.dump({
-            "date": today,
-            "realised_today": float(val)
-        }, f)
+    atomic_write_json(PNL_STATE_FILE, {
+        "date": today,
+        "realised_today": float(val)
+    })
 
 
 # ==================================================
