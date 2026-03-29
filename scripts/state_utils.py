@@ -2,7 +2,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 def safe_load_json(path: Path, default: Any):
@@ -12,6 +12,17 @@ def safe_load_json(path: Path, default: Any):
     try:
         with path.open() as f:
             return json.load(f)
+    except Exception:
+        return default
+
+
+def safe_load_model_json(path: Path, default: Any, loader: Callable[[dict], Any]):
+    data = safe_load_json(path, None)
+    if data is None:
+        return default
+
+    try:
+        return loader(data)
     except Exception:
         return default
 

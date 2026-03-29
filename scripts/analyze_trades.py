@@ -1,14 +1,3 @@
-
-
-
-
-
-# python3 scripts/analyze_trades.py
-
-
-
-# python3 scripts/analyze_trades.py
-
 import csv
 import math
 from pathlib import Path
@@ -16,6 +5,8 @@ from datetime import datetime
 from collections import defaultdict
 
 from scripts.app_config import APP_CONFIG
+from scripts.logger import get_logger
+from scripts.models import DailySummaryRow, TradeSummaryRow
 
 # ---------- paths ----------
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -35,9 +26,75 @@ TRADE_EVENTS_BUY_FILE = RESULT_DIR / "trade_events_buy.csv"
 TRADE_QUALITY_FILE = RESULT_DIR / "trade_quality_summary.csv"
 TRADE_QUALITY_BUY_FILE = RESULT_DIR / "trade_quality_summary_buy.csv"
 TRADE_QUALITY_COMBINED_FILE = RESULT_DIR / "trade_quality_summary_combined.csv"
+logger = get_logger("analyze_trades")
+
+TRADE_SUMMARY_FIELDS = [
+    "trade_id",
+    "entry_time",
+    "exit_time",
+    "time_in_trade_min",
+    "trade_type",
+    "strike",
+    "expiry",
+    "trade_pnl",
+]
+
+DAILY_SUMMARY_FIELDS = [
+    "date",
+    "total_trades",
+    "winning_trades",
+    "losing_trades",
+    "gross_pnl",
+    "estimated_cost",
+    "net_pnl",
+]
+
+TRADE_QUALITY_FIELDS = [
+    "side",
+    "trade_id",
+    "regime",
+    "entry_signal",
+    "entry_time",
+    "exit_time",
+    "time_in_trade_min",
+    "strike",
+    "expiry",
+    "entry_spot",
+    "entry_direction_score",
+    "entry_bias",
+    "exit_reason",
+    "trade_pnl",
+]
+
+REPORT_SPECS = {
+    "sell": {
+        "label": "Sell",
+        "system_pnl": SYSTEM_PNL_FILE,
+        "trade_summary": TRADE_SUMMARY_FILE,
+        "daily_summary": DAILY_SUMMARY_FILE,
+        "trade_events": TRADE_EVENTS_SELL_FILE,
+        "trade_quality": TRADE_QUALITY_FILE,
+    },
+    "buy": {
+        "label": "Buy",
+        "system_pnl": SYSTEM_PNL_BUY_FILE,
+        "trade_summary": TRADE_SUMMARY_BUY_FILE,
+        "daily_summary": DAILY_SUMMARY_BUY_FILE,
+        "trade_events": TRADE_EVENTS_BUY_FILE,
+        "trade_quality": TRADE_QUALITY_BUY_FILE,
+    },
+}
 
 def parse_time(ts):
     return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+
+
+def write_csv_rows(path: Path, fieldnames: list[str], rows: list[dict]):
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
 
 
 # ------------------------------------------------
@@ -90,16 +147,16 @@ def extract_trades(system_pnl_file):
 
                 trade_pnl = realised - current_trade["entry_realised"]
 
-                trades.append({
-                    "trade_id": current_trade["trade_id"],
-                    "entry_time": current_trade["entry_time"],
-                    "exit_time": timestamp,
-                    "time_in_trade_min": duration,
-                    "trade_type": current_trade["trade_type"],
-                    "strike": current_trade["strike"],
-                    "expiry": current_trade["expiry"],
-                    "trade_pnl": round(trade_pnl, 2),
-                })
+                trades.append(TradeSummaryRow(
+                    trade_id=current_trade["trade_id"],
+                    entry_time=current_trade["entry_time"],
+                    exit_time=timestamp,
+                    time_in_trade_min=duration,
+                    trade_type=current_trade["trade_type"],
+                    strike=current_trade["strike"],
+                    expiry=current_trade["expiry"],
+                    trade_pnl=round(trade_pnl, 2),
+                ).to_dict())
 
                 current_trade = None
 
@@ -111,30 +168,11 @@ def extract_trades(system_pnl_file):
 # ------------------------------------------------
 
 def update_trade_summary(trades, trade_summary_file):
-    with open(trade_summary_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "trade_id",
-            "entry_time",
-            "exit_time",
-            "time_in_trade_min",
-            "trade_type",
-            "strike",
-            "expiry",
-            "trade_pnl",
-        ])
-
-        for t in sorted(trades, key=lambda trade: (trade["entry_time"], trade["trade_id"])):
-            writer.writerow([
-                t["trade_id"],
-                t["entry_time"],
-                t["exit_time"],
-                t["time_in_trade_min"],
-                t["trade_type"],
-                t["strike"],
-                t["expiry"],
-                t["trade_pnl"],
-            ])
+    rows = [
+        dict(t)
+        for t in sorted(trades, key=lambda trade: (trade["entry_time"], trade["trade_id"]))
+    ]
+    write_csv_rows(trade_summary_file, TRADE_SUMMARY_FIELDS, rows)
 
 
 # ------------------------------------------------
@@ -162,32 +200,18 @@ def update_daily_summary(trades, daily_summary_file):
         estimated_cost = total_trades * APP_CONFIG.reporting.trade_cost
         net_pnl = gross_pnl - estimated_cost
 
-        existing_rows[date] = [
-            date,
-            total_trades,
-            winning,
-            losing,
-            round(gross_pnl, 2),
-            estimated_cost,
-            round(net_pnl, 2),
-        ]
+        existing_rows[date] = DailySummaryRow(
+            date=date,
+            total_trades=total_trades,
+            winning_trades=winning,
+            losing_trades=losing,
+            gross_pnl=round(gross_pnl, 2),
+            estimated_cost=estimated_cost,
+            net_pnl=round(net_pnl, 2),
+        ).to_dict()
 
-    with open(daily_summary_file, "w", newline="") as f:
-
-        writer = csv.writer(f)
-
-        writer.writerow([
-            "date",
-            "total_trades",
-            "winning_trades",
-            "losing_trades",
-            "gross_pnl",
-            "estimated_cost",
-            "net_pnl",
-        ])
-
-        for row in sorted(existing_rows.values()):
-            writer.writerow(row)
+    rows = [row for _, row in sorted(existing_rows.items())]
+    write_csv_rows(daily_summary_file, DAILY_SUMMARY_FIELDS, rows)
 
 
 def run_analysis(system_pnl_file, trade_summary_file, daily_summary_file):
@@ -199,52 +223,42 @@ def run_analysis(system_pnl_file, trade_summary_file, daily_summary_file):
 
 def export_trade_quality_summary(source_file, target_file):
     if not Path(source_file).exists():
-        with open(target_file, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "side",
-                "trade_id",
-                "regime",
-                "entry_signal",
-                "entry_time",
-                "exit_time",
-                "time_in_trade_min",
-                "strike",
-                "expiry",
-                "entry_spot",
-                "entry_direction_score",
-                "entry_bias",
-                "exit_reason",
-                "trade_pnl",
-            ])
+        write_csv_rows(target_file, TRADE_QUALITY_FIELDS, [])
         return []
 
     with open(source_file) as f:
         rows = list(csv.DictReader(f))
 
-    with open(target_file, "w", newline="") as f:
-        fieldnames = [
-            "side",
-            "trade_id",
-            "regime",
-            "entry_signal",
-            "entry_time",
-            "exit_time",
-            "time_in_trade_min",
-            "strike",
-            "expiry",
-            "entry_spot",
-            "entry_direction_score",
-            "entry_bias",
-            "exit_reason",
-            "trade_pnl",
-        ]
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in fieldnames})
+    write_csv_rows(target_file, TRADE_QUALITY_FIELDS, rows)
 
     return rows
+
+
+def run_reporting_spec(spec: dict):
+    trades = run_analysis(
+        spec["system_pnl"],
+        spec["trade_summary"],
+        spec["daily_summary"],
+    )
+    logger.info(f"{spec['label']} trade summary updated: {spec['trade_summary']}")
+    logger.info(f"{spec['label']} daily summary updated: {spec['daily_summary']}")
+
+    quality_rows = export_trade_quality_summary(
+        spec["trade_events"],
+        spec["trade_quality"],
+    )
+    logger.info(f"{spec['label']} trade quality summary updated: {spec['trade_quality']}")
+    return trades, quality_rows
+
+
+def export_combined_outputs(combined_trades, combined_quality):
+    update_trade_summary(combined_trades, TRADE_SUMMARY_COMBINED_FILE)
+    update_daily_summary(combined_trades, DAILY_SUMMARY_COMBINED_FILE)
+    logger.info(f"Combined trade summary updated: {TRADE_SUMMARY_COMBINED_FILE}")
+    logger.info(f"Combined daily summary updated: {DAILY_SUMMARY_COMBINED_FILE}")
+
+    write_csv_rows(TRADE_QUALITY_COMBINED_FILE, TRADE_QUALITY_FIELDS, combined_quality)
+    logger.info(f"Combined trade quality summary updated: {TRADE_QUALITY_COMBINED_FILE}")
 
 
 # ------------------------------------------------
@@ -252,69 +266,18 @@ def export_trade_quality_summary(source_file, target_file):
 # ------------------------------------------------
 
 def main():
-    sell_trades = run_analysis(
-        SYSTEM_PNL_FILE,
-        TRADE_SUMMARY_FILE,
-        DAILY_SUMMARY_FILE,
-    )
-    print("Sell trade summary updated:", TRADE_SUMMARY_FILE)
-    print("Sell daily summary updated:", DAILY_SUMMARY_FILE)
-
-    buy_trades = run_analysis(
-        SYSTEM_PNL_BUY_FILE,
-        TRADE_SUMMARY_BUY_FILE,
-        DAILY_SUMMARY_BUY_FILE,
-    )
-    print("Buy trade summary updated:", TRADE_SUMMARY_BUY_FILE)
-    print("Buy daily summary updated:", DAILY_SUMMARY_BUY_FILE)
+    sell_trades, sell_quality = run_reporting_spec(REPORT_SPECS["sell"])
+    buy_trades, buy_quality = run_reporting_spec(REPORT_SPECS["buy"])
 
     combined_trades = sorted(
         sell_trades + buy_trades,
         key=lambda trade: (trade["entry_time"], trade["trade_id"]),
     )
-    update_trade_summary(combined_trades, TRADE_SUMMARY_COMBINED_FILE)
-    update_daily_summary(combined_trades, DAILY_SUMMARY_COMBINED_FILE)
-    print("Combined trade summary updated:", TRADE_SUMMARY_COMBINED_FILE)
-    print("Combined daily summary updated:", DAILY_SUMMARY_COMBINED_FILE)
-
-    sell_quality = export_trade_quality_summary(
-        TRADE_EVENTS_SELL_FILE,
-        TRADE_QUALITY_FILE,
-    )
-    print("Sell trade quality summary updated:", TRADE_QUALITY_FILE)
-
-    buy_quality = export_trade_quality_summary(
-        TRADE_EVENTS_BUY_FILE,
-        TRADE_QUALITY_BUY_FILE,
-    )
-    print("Buy trade quality summary updated:", TRADE_QUALITY_BUY_FILE)
-
     combined_quality = sorted(
         sell_quality + buy_quality,
         key=lambda row: (row.get("entry_time", ""), row.get("trade_id", ""), row.get("side", "")),
     )
-    with open(TRADE_QUALITY_COMBINED_FILE, "w", newline="") as f:
-        fieldnames = [
-            "side",
-            "trade_id",
-            "regime",
-            "entry_signal",
-            "entry_time",
-            "exit_time",
-            "time_in_trade_min",
-            "strike",
-            "expiry",
-            "entry_spot",
-            "entry_direction_score",
-            "entry_bias",
-            "exit_reason",
-            "trade_pnl",
-        ]
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in combined_quality:
-            writer.writerow({field: row.get(field, "") for field in fieldnames})
-    print("Combined trade quality summary updated:", TRADE_QUALITY_COMBINED_FILE)
+    export_combined_outputs(combined_trades, combined_quality)
 
 
 if __name__ == "__main__":

@@ -6,10 +6,11 @@ from pathlib import Path
 from scripts.app_config import APP_CONFIG, IST
 from scripts.clock import get_clock
 from scripts.logger import get_logger
+from scripts.models import OpenPosition, PositionLeg
 from scripts.option_resolver import get_atm_straddle
 from scripts.regime_classifier import bias as regime_bias
 from scripts.regime_classifier import direction_score, load_last_candles
-from scripts.state_utils import atomic_write_json, safe_load_json
+from scripts.state_utils import atomic_write_json, safe_load_json, safe_load_model_json
 from scripts.utils import fetch_ltp_map
 
 CONFIG = APP_CONFIG.trade
@@ -98,36 +99,36 @@ class BasePaperTradeEngine:
         return regime in ("SELL_PE", "SELL_CE")
 
     def sync_from_disk(self):
-        data = safe_load_json(self.get_open_position_file(), None)
-        if not data or data.get("status") != "OPEN":
+        data = safe_load_model_json(self.get_open_position_file(), None, OpenPosition.from_dict)
+        if not data or data.status != "OPEN":
             return
 
         try:
             entry_time = datetime.strptime(
-                data["entry_time"],
+                data.entry_time,
                 "%Y-%m-%d %H:%M:%S",
             ).replace(tzinfo=IST)
-            legs = data.get("legs", [])
-            ce_leg = next((leg for leg in legs if leg.get("type") == "CE"), None)
-            pe_leg = next((leg for leg in legs if leg.get("type") == "PE"), None)
+            legs = data.legs or []
+            ce_leg = next((leg for leg in legs if leg.type == "CE"), None)
+            pe_leg = next((leg for leg in legs if leg.type == "PE"), None)
 
             self.position = Position(
-                trade_id=data["trade_id"],
-                regime=data["regime"],
-                strike=int(data["strike"]),
-                expiry=data["expiry"],
-                ce_security_id=int(ce_leg["security_id"]) if ce_leg else None,
-                pe_security_id=int(pe_leg["security_id"]) if pe_leg else None,
+                trade_id=data.trade_id,
+                regime=data.regime,
+                strike=int(data.strike),
+                expiry=data.expiry,
+                ce_security_id=int(ce_leg.security_id) if ce_leg else None,
+                pe_security_id=int(pe_leg.security_id) if pe_leg else None,
                 entry_time=entry_time,
-                lots=int((ce_leg or pe_leg or {}).get("lots", CONFIG.lots)),
-                side=data.get("side", self.get_side()),
-                entry_signal=data.get("entry_signal"),
-                entry_spot=float(data.get("entry_spot", 0.0)),
-                entry_direction_score=float(data.get("entry_direction_score", 0.0)),
-                entry_bias=float(data.get("entry_bias", 0.0)),
+                lots=int((ce_leg or pe_leg or PositionLeg(0)).lots),
+                side=data.side or self.get_side(),
+                entry_signal=data.entry_signal,
+                entry_spot=float(data.entry_spot),
+                entry_direction_score=float(data.entry_direction_score),
+                entry_bias=float(data.entry_bias),
             )
             self.state = "IN_POSITION"
-            self.active_regime = data.get("regime")
+            self.active_regime = data.regime
             self.max_pnl = self.get_current_total_pnl()
             self.logger.warning(self.recovery_message)
         except Exception:
@@ -173,22 +174,22 @@ class BasePaperTradeEngine:
                 "type": "PE",
             })
 
-        payload = {
-            "status": "OPEN",
-            "trade_id": pos.trade_id,
-            "regime": pos.regime,
-            "strike": pos.strike,
-            "expiry": pos.expiry,
-            "entry_time": pos.entry_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "side": pos.side,
-            "entry_signal": pos.entry_signal,
-            "entry_spot": pos.entry_spot,
-            "entry_direction_score": pos.entry_direction_score,
-            "entry_bias": pos.entry_bias,
-            "legs": legs,
-        }
+        payload = OpenPosition(
+            status="OPEN",
+            trade_id=pos.trade_id,
+            regime=pos.regime,
+            strike=pos.strike,
+            expiry=pos.expiry,
+            entry_time=pos.entry_time.strftime("%Y-%m-%d %H:%M:%S"),
+            side=pos.side,
+            entry_signal=pos.entry_signal,
+            entry_spot=pos.entry_spot,
+            entry_direction_score=pos.entry_direction_score,
+            entry_bias=pos.entry_bias,
+            legs=[PositionLeg.from_dict(leg) for leg in legs],
+        )
 
-        atomic_write_json(self.get_open_position_file(), payload, indent=2)
+        atomic_write_json(self.get_open_position_file(), payload.to_dict(), indent=2)
 
     def close_open_position(self):
         open_position_file = self.get_open_position_file()
@@ -278,11 +279,11 @@ class BasePaperTradeEngine:
             if not open_position_file.exists():
                 return
 
-            data = safe_load_json(open_position_file, {})
-            if data.get("status") != "OPEN":
+            data = safe_load_model_json(open_position_file, None, OpenPosition.from_dict)
+            if not data or data.status != "OPEN":
                 return
 
-            entry_time = data.get("entry_time", "")
+            entry_time = data.entry_time
             entry_date = entry_time[:10]
             today = now.strftime("%Y-%m-%d")
 

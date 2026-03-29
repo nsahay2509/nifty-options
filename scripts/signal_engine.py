@@ -8,6 +8,8 @@ import json
 
 from scripts.app_config import APP_CONFIG
 from scripts.clock import get_clock
+from scripts.logger import get_logger
+from scripts.models import SignalState
 from scripts.regime_classifier import classify_regime
 from scripts.state_utils import atomic_write_json
 
@@ -15,36 +17,24 @@ from scripts.state_utils import atomic_write_json
 # ---------------- CONFIG ----------------
 STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "signal_state.json"
 CONFIG = APP_CONFIG.signal
+logger = get_logger("signal_engine")
 
 
 # ---------------- STATE ----------------
 def load_state():
     if not STATE_FILE.exists():
-        return {
-            "last_regime": "WAIT",
-            "last_signal_time": None,
-            "candidate_regime": "WAIT",
-            "candidate_count": 0,
-            "confirmed_regime": "WAIT",
-        }
+        return SignalState()
 
     try:
-        state = json.loads(STATE_FILE.read_text())
+        state = SignalState.from_dict(json.loads(STATE_FILE.read_text()))
     except Exception:
-        state = {}
-
-    # backward compatibility (important)
-    state.setdefault("last_regime", "WAIT")
-    state.setdefault("last_signal_time", None)
-    state.setdefault("candidate_regime", "WAIT")
-    state.setdefault("candidate_count", 0)
-    state.setdefault("confirmed_regime", "WAIT")
+        state = SignalState()
 
     return state
 
 
 def save_state(state):
-    atomic_write_json(STATE_FILE, state)
+    atomic_write_json(STATE_FILE, state.to_dict())
 
 
 # ---------------- CORE ENGINE ----------------
@@ -54,10 +44,10 @@ def generate_signal(history, clock=None):
 
     active_clock = clock or get_clock()
     raw_regime = classify_regime(history, clock=active_clock)
-    confirmed_regime = state["confirmed_regime"]
+    confirmed_regime = state.confirmed_regime
 
-    candidate = state["candidate_regime"]
-    count = state["candidate_count"]
+    candidate = state.candidate_regime
+    count = state.candidate_count
 
     now = active_clock.now()
 
@@ -86,7 +76,7 @@ def generate_signal(history, clock=None):
         and new_confirmed != "WAIT"
     ):
 
-        last_time = state["last_signal_time"]
+        last_time = state.last_signal_time
 
         if last_time:
             last_time = datetime.fromisoformat(last_time)
@@ -99,7 +89,7 @@ def generate_signal(history, clock=None):
     # ==================================================
     # DIAGNOSTIC LOGGING
     # ==================================================
-    print(
+    logger.info(
         f"[SIGNAL_ENGINE] "
         f"raw={raw_regime} | "
         f"candidate={candidate}({count}) | "
@@ -110,15 +100,13 @@ def generate_signal(history, clock=None):
     # ==================================================
     # SAVE STATE
     # ==================================================
-    state.update({
-        "last_regime": raw_regime,
-        "candidate_regime": candidate,
-        "candidate_count": count,
-        "confirmed_regime": new_confirmed,
-    })
-
-    if signal:
-        state["last_signal_time"] = now.isoformat()
+    state = SignalState(
+        last_regime=raw_regime,
+        last_signal_time=now.isoformat() if signal else state.last_signal_time,
+        candidate_regime=candidate,
+        candidate_count=count,
+        confirmed_regime=new_confirmed,
+    )
 
     save_state(state)
 

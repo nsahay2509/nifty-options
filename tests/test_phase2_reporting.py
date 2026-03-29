@@ -3,7 +3,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.analyze_trades import run_analysis, update_daily_summary, update_trade_summary
+from scripts.analyze_trades import (
+    export_trade_quality_summary,
+    run_analysis,
+    update_daily_summary,
+    update_trade_summary,
+    write_csv_rows,
+)
 from scripts.utils import ensure_complete_ltp_map
 
 
@@ -156,6 +162,24 @@ class AnalyzeTradesTests(unittest.TestCase):
                 "200",
                 "-50.0",
             ])
+
+    def test_export_trade_quality_summary_writes_header_for_missing_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "quality.csv"
+
+            rows = export_trade_quality_summary(Path(tmp) / "missing.csv", target)
+
+            self.assertEqual(rows, [])
+            written = self.read_rows(target)
+            self.assertEqual(written[0][0], "side")
+
+    def test_write_csv_rows_writes_header_and_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rows.csv"
+            write_csv_rows(path, ["a", "b"], [{"a": "1", "b": "2"}])
+
+            rows = self.read_rows(path)
+            self.assertEqual(rows, [["a", "b"], ["1", "2"]])
 
 
 if __name__ == "__main__":
