@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from scripts.logger import get_logger
-from scripts.app_config import APP_CONFIG
-from scripts.paper_trade_engine_core import BasePaperTradeEngine, Position
+from scripts.paper_trade_engine_core import Position
+from scripts.paper_trade_engine_factory import TradeEngineSpec, build_engine_class
 
 
 logger = get_logger("paper_trade_buy")
@@ -14,50 +14,22 @@ DATA_DIR.mkdir(exist_ok=True)
 OPEN_POS_FILE = DATA_DIR / "open_position_buy.json"
 
 
-class PaperTradeEngine(BasePaperTradeEngine):
-    logger = logger
-    recovery_message = "Recovered OPEN buy position from disk"
-    recovery_error_code = "OPEN_BUY_POSITION_RECOVERY_FAILED"
-    stale_position_message = "STALE BUY POSITION DETECTED -> FORCE CLOSE"
-    stale_position_check_error_code = "STALE_BUY_POSITION_CHECK_FAILED"
-    entry_invalid_regime_message = "ENTRY_SKIPPED_INVALID_REGIME | {regime}"
+SPEC = TradeEngineSpec(
+    side="BUY",
+    logger=logger,
+    open_position_file_getter=lambda: OPEN_POS_FILE,
+    pnl_file_getter=lambda: BASE_DIR / "data" / "results" / "system_pnl_buy.csv",
+    trade_events_file_getter=lambda: BASE_DIR / "data" / "results" / "trade_events_buy.csv",
+    recovery_message="Recovered OPEN buy position from disk",
+    recovery_error_code="OPEN_BUY_POSITION_RECOVERY_FAILED",
+    stale_position_message="STALE BUY POSITION DETECTED -> FORCE CLOSE",
+    stale_position_check_error_code="STALE_BUY_POSITION_CHECK_FAILED",
+    reset_message_template="New trading day detected | resetting buy engine state from {old_date} to {new_date}",
+    entry_invalid_regime_message="ENTRY_SKIPPED_INVALID_REGIME | {regime}",
+)
 
-    def get_open_position_file(self) -> Path:
-        return OPEN_POS_FILE
 
-    def get_pnl_file(self) -> Path:
-        return BASE_DIR / "data" / "results" / "system_pnl_buy.csv"
-
-    def get_trade_events_file(self) -> Path:
-        return BASE_DIR / "data" / "results" / "trade_events_buy.csv"
-
-    def get_side(self) -> str:
-        return "BUY"
-
-    def get_reset_log_message(self, old_date, new_date) -> str:
-        return f"New trading day detected | resetting buy engine state from {old_date} to {new_date}"
-
-    def resolve_entry_ids(self, regime: str, atm: dict) -> tuple[int | None, int | None]:
-        if regime == "SELL_PE":
-            return atm["ce_security_id"], None
-        return None, atm["pe_security_id"]
-
-    def format_entry_message(
-        self,
-        regime: str,
-        spot: float,
-        atm: dict,
-        ce_id: int | None,
-        pe_id: int | None,
-    ) -> str:
-        return (
-            f"ENTRY | BUY_FROM_{regime} | spot={spot:.2f} "
-            f"strike={atm['strike']} exp={atm['expiry']} "
-            f"ce_id={ce_id} pe_id={pe_id} lots={APP_CONFIG.trade.lots}"
-        )
-
-    def compute_leg_pnl(self, entry: float, ltp: float, qty: int) -> float:
-        return (ltp - entry) * qty
+PaperTradeEngine = build_engine_class(SPEC)
 
 
 _engine = PaperTradeEngine()
