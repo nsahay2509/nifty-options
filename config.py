@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import time as dtime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 
@@ -69,6 +70,14 @@ class DiagnosticsConfig:
 
 
 @dataclass(frozen=True)
+class MonitoringConfig:
+    host: str = "0.0.0.0"
+    port: int = 8010
+    recent_trades_limit: int = 25
+    dashboard_state_file: str = "data/dashboard_state.json"
+
+
+@dataclass(frozen=True)
 class AppConfig:
     evaluator: EvaluatorConfig = EvaluatorConfig()
     signal: SignalConfig = SignalConfig()
@@ -76,6 +85,7 @@ class AppConfig:
     trade: TradeConfig = TradeConfig()
     reporting: ReportingConfig = ReportingConfig()
     diagnostics: DiagnosticsConfig = DiagnosticsConfig()
+    monitoring: MonitoringConfig = MonitoringConfig()
 
 
 APP_CONFIG = AppConfig()

@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import nifty_evaluator
+from scripts.dashboard_state import build_dashboard_state
 from scripts.clock import FrozenClock
 from scripts.runtime_config import load_runtime_env, resolve_env_file
 
@@ -115,6 +116,22 @@ class EvaluatorHelperTests(unittest.TestCase):
             self.assertEqual(ids, [])
         finally:
             nifty_evaluator.get_atm_straddle = original
+
+    def test_build_dashboard_state_includes_expected_top_level_keys(self):
+        clock = FrozenClock(datetime(2026, 3, 28, 10, 0, 5, tzinfo=nifty_evaluator.IST))
+
+        payload = build_dashboard_state(
+            cycle_started_at="2026-03-28 10:00:05",
+            updater_ok=True,
+            clock=clock,
+        )
+
+        self.assertIn("generated_at", payload)
+        self.assertIn("signal", payload)
+        self.assertIn("positions", payload)
+        self.assertIn("pnl", payload)
+        self.assertEqual(payload["updater_ok"], True)
+        self.assertNotIn("combined_total", payload["pnl"])
 
 
 if __name__ == "__main__":

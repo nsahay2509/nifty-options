@@ -4,6 +4,7 @@ from pathlib import Path
 
 from scripts.app_config import APP_CONFIG
 from scripts.clock import get_clock
+from scripts.dashboard_state import write_dashboard_state
 from scripts.logger import get_logger
 from scripts.models import OpenPosition
 from scripts.option_resolver import get_atm_straddle
@@ -115,6 +116,7 @@ def build_cycle_context(clock=None):
 
 def run_cycle(clock=None):
     active_clock = clock or get_clock()
+    cycle_started_at = active_clock.now().strftime("%Y-%m-%d %H:%M:%S")
 
     logger.info("")
     logger.info("-" * 60)
@@ -150,6 +152,12 @@ def run_cycle(clock=None):
         logger.info("STEP 5: BUY mtm start")
         run_buy_mtm(ltp_map=ltp_map, clock=active_clock)
         logger.info("STEP 5: BUY mtm end")
+
+    write_dashboard_state(
+        cycle_started_at=cycle_started_at,
+        updater_ok=ok,
+        clock=active_clock,
+    )
 
     logger.info("-" * 60)
     logger.info("CYCLE END")
