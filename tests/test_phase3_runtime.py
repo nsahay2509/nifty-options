@@ -2,9 +2,11 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 import nifty_evaluator
+from scripts.clock import FrozenClock
 from scripts.runtime_config import load_runtime_env, resolve_env_file
 
 
@@ -62,6 +64,21 @@ class RuntimeConfigTests(unittest.TestCase):
 
 
 class EvaluatorHelperTests(unittest.TestCase):
+    def test_next_run_time_uses_configured_delay(self):
+        now = datetime(2026, 3, 28, 10, 0, 2, tzinfo=nifty_evaluator.IST)
+
+        run_at = nifty_evaluator.next_run_time(now)
+
+        self.assertEqual(run_at, datetime(2026, 3, 28, 10, 0, 5, tzinfo=nifty_evaluator.IST))
+
+    def test_sleep_until_uses_injected_clock(self):
+        clock = FrozenClock(datetime(2026, 3, 28, 10, 0, 0, tzinfo=nifty_evaluator.IST))
+        target = datetime(2026, 3, 28, 10, 0, 5, tzinfo=nifty_evaluator.IST)
+
+        nifty_evaluator.sleep_until(target, clock=clock)
+
+        self.assertEqual(clock.now(), target)
+
     def test_collect_open_position_security_ids_skips_invalid_legs(self):
         with tempfile.TemporaryDirectory() as tmp:
             position_file = Path(tmp) / "open_position.json"

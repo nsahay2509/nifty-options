@@ -1,13 +1,12 @@
 # nifty_evaluator.py
 
-import time
-import json
 import sys
 import subprocess
-from datetime import datetime, time as dtime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 from pathlib import Path
 
+from scripts.app_config import APP_CONFIG, IST
+from scripts.clock import get_clock
 from scripts.paper_trade_engine import run as run_paper_trade
 from scripts.logger import get_logger
 from scripts.paper_mtm_engine import run as run_mtm
@@ -19,14 +18,8 @@ from scripts.utils import ensure_complete_ltp_map
 from scripts.option_resolver import get_atm_straddle
 from scripts.state_utils import safe_load_json
 
-# ---------------- CONFIG ----------------
-IST = ZoneInfo("Asia/Kolkata")
-
-START_TIME = dtime(9, 15)
-END_TIME   = dtime(15, 30)
-RUN_DELAY_SEC = 5
-
 BASE_DIR = Path(__file__).resolve().parent
+CONFIG = APP_CONFIG.evaluator
 
 logger = get_logger("evaluator")
 _last_cycle_key = None
@@ -38,18 +31,19 @@ def is_weekday(dt: datetime) -> bool:
 
 def next_run_time(now: datetime) -> datetime:
     base = now.replace(second=0, microsecond=0)
-    target = base.replace(second=RUN_DELAY_SEC)
+    target = base.replace(second=CONFIG.run_delay_sec)
 
     if now < target:
         return target
 
-    return (base + timedelta(minutes=1)).replace(second=RUN_DELAY_SEC)
+    return (base + timedelta(minutes=1)).replace(second=CONFIG.run_delay_sec)
 
 
-def sleep_until(target: datetime):
-    seconds = (target - datetime.now(IST)).total_seconds()
+def sleep_until(target: datetime, clock=None):
+    active_clock = clock or get_clock()
+    seconds = (target - active_clock.now()).total_seconds()
     if seconds > 0:
-        time.sleep(seconds)
+        active_clock.sleep(seconds)
 
 
 def run_updater():
@@ -116,7 +110,8 @@ def collect_regime_security_ids(regime, history) -> list[int]:
     return [atm["ce_security_id"], atm["pe_security_id"]]
 
 
-def run_cycle():
+def run_cycle(clock=None):
+    active_clock = clock or get_clock()
 
     logger.info("")
     logger.info("-" * 60)
@@ -129,8 +124,8 @@ def run_cycle():
 
     if ok:
         # ---- generate signal once ----
-        history = load_last_candles(25)
-        signal, regime = generate_signal(history)
+        history = load_last_candles(APP_CONFIG.regime.window, clock=active_clock)
+        signal, regime = generate_signal(history, clock=active_clock)
 
         logger.info(f"MASTER_SIGNAL | signal={signal} regime={regime}")
 
@@ -178,7 +173,7 @@ def run_cycle():
         logger.info("STEP 2: SELL paper_trade end")
 
         logger.info("STEP 3: SELL mtm start")
-        run_mtm(ltp_map=ltp_map)
+        run_mtm(ltp_map=ltp_map, clock=active_clock)
         logger.info("STEP 3: SELL mtm end")
 
         # ==================================================
@@ -194,7 +189,7 @@ def run_cycle():
         logger.info("STEP 4: BUY paper_trade end")
 
         logger.info("STEP 5: BUY mtm start")
-        run_buy_mtm(ltp_map=ltp_map)
+        run_buy_mtm(ltp_map=ltp_map, clock=active_clock)
         logger.info("STEP 5: BUY mtm end")
 
     logger.info("-" * 60)
@@ -205,48 +200,51 @@ def run_cycle():
 
 # ---------------- MAIN LOOP ----------------
 def main():
+    clock = get_clock()
 
     logger.info("NIFTY Evaluator Started")
-    logger.info(f"Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +{RUN_DELAY_SEC} sec")
+    logger.info(
+        f"Schedule: Mon–Fri | 09:15–15:30 IST | Every minute +{CONFIG.run_delay_sec} sec"
+    )
     logger.info("-" * 60)
 
     while True:
-        now = datetime.now(IST)
+        now = clock.now()
 
         # Weekend
         if not is_weekday(now):
-            time.sleep(60)
+            clock.sleep(60)
             continue
 
         # Before market
-        if now.time() < START_TIME:
+        if now.time() < CONFIG.start_time:
             target = now.replace(
-                hour=START_TIME.hour,
-                minute=START_TIME.minute,
+                hour=CONFIG.start_time.hour,
+                minute=CONFIG.start_time.minute,
                 second=2,
                 microsecond=0,
             )
-            sleep_until(target)
+            sleep_until(target, clock=clock)
             continue
 
         # After market
-        if now.time() >= END_TIME:
+        if now.time() >= CONFIG.end_time:
             tomorrow = now + timedelta(days=1)
             target = tomorrow.replace(
-                hour=START_TIME.hour,
-                minute=START_TIME.minute,
+                hour=CONFIG.start_time.hour,
+                minute=CONFIG.start_time.minute,
                 second=2,
                 microsecond=0,
             )
-            sleep_until(target)
+            sleep_until(target, clock=clock)
             continue
 
         # During market
         run_at = next_run_time(now)
-        sleep_until(run_at)
+        sleep_until(run_at, clock=clock)
 
         try:
-            run_cycle()
+            run_cycle(clock=clock)
         except Exception as e:
             logger.exception(f"CYCLE ERROR: {e}")
 

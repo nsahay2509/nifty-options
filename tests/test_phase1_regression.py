@@ -4,6 +4,8 @@ import unittest
 from datetime import date, datetime
 from pathlib import Path
 
+from scripts.app_config import IST
+from scripts.clock import FrozenClock
 from scripts.state_utils import atomic_write_json, safe_load_json
 import scripts.paper_trade_engine as sell_engine
 import scripts.paper_trade_engine_buy as buy_engine
@@ -31,6 +33,9 @@ class _EngineTempDirMixin:
         result_dir = Path(tmp) / "data" / "results"
         result_dir.mkdir(parents=True, exist_ok=True)
         return result_dir
+
+    def make_clock(self, ts: str) -> FrozenClock:
+        return FrozenClock(datetime.fromisoformat(ts).replace(tzinfo=IST))
 
     def make_history(self, close=22500.0):
         return [
@@ -72,7 +77,7 @@ class SellEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
                 sell_engine.OPEN_POS_FILE = open_pos_file
                 sell_engine.BASE_DIR = Path(tmp)
 
-                engine = sell_engine.PaperTradeEngine()
+                engine = sell_engine.PaperTradeEngine(clock=self.make_clock("2026-03-28T10:06:00"))
 
                 self.assertEqual(engine.state, "IN_POSITION")
                 self.assertIsNotNone(engine.position)
@@ -93,7 +98,7 @@ class SellEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
                 sell_engine.OPEN_POS_FILE = open_pos_file
                 sell_engine.BASE_DIR = Path(tmp)
 
-                engine = sell_engine.PaperTradeEngine()
+                engine = sell_engine.PaperTradeEngine(clock=self.make_clock("2026-03-28T09:21:00"))
                 engine.state = "DONE"
                 engine.session_date = date(2026, 3, 27)
                 engine.position = sell_engine.Position(
@@ -103,11 +108,11 @@ class SellEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
                     expiry="2026-03-30",
                     ce_security_id=111,
                     pe_security_id=None,
-                    entry_time=datetime(2026, 3, 27, 15, 0, tzinfo=sell_engine.IST),
+                    entry_time=datetime(2026, 3, 27, 15, 0, tzinfo=IST),
                 )
 
                 engine.reset_for_new_day(
-                    datetime(2026, 3, 28, 9, 21, tzinfo=sell_engine.IST)
+                    datetime(2026, 3, 28, 9, 21, tzinfo=IST)
                 )
 
                 self.assertEqual(engine.state, "FLAT")
@@ -145,7 +150,7 @@ class BuyEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
                 buy_engine.OPEN_POS_FILE = open_pos_file
                 buy_engine.BASE_DIR = Path(tmp)
 
-                engine = buy_engine.PaperTradeEngine()
+                engine = buy_engine.PaperTradeEngine(clock=self.make_clock("2026-03-28T10:07:00"))
 
                 self.assertEqual(engine.state, "IN_POSITION")
                 self.assertIsNotNone(engine.position)
@@ -159,8 +164,9 @@ class BuyEngineRecoveryTests(unittest.TestCase, _EngineTempDirMixin):
 
 class EngineMappingTests(unittest.TestCase):
     def test_sell_and_buy_engines_keep_different_leg_mapping(self):
-        sell = sell_engine.PaperTradeEngine()
-        buy = buy_engine.PaperTradeEngine()
+        clock = FrozenClock(datetime(2026, 3, 28, 10, 0, tzinfo=IST))
+        sell = sell_engine.PaperTradeEngine(clock=clock)
+        buy = buy_engine.PaperTradeEngine(clock=clock)
 
         atm = {
             "ce_security_id": 111,
@@ -192,7 +198,7 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
                     "pe_security_id": 222,
                 }
 
-                engine = sell_engine.PaperTradeEngine()
+                engine = sell_engine.PaperTradeEngine(clock=self.make_clock("2026-03-28T10:05:00"))
                 engine.tick(
                     signal=None,
                     regime="SELL_PE",
@@ -211,7 +217,7 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
         with tempfile.TemporaryDirectory() as tmp:
             open_pos_file = self.make_trade_file(tmp, "open_position.json")
             self.make_results_dir(tmp)
-            now = datetime(2026, 3, 28, 10, 2, tzinfo=sell_engine.IST)
+            now = datetime(2026, 3, 28, 10, 2, tzinfo=IST)
 
             atomic_write_json(open_pos_file, {
                 "status": "OPEN",
@@ -241,8 +247,7 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
                 sell_engine.OPEN_POS_FILE = open_pos_file
                 sell_engine.BASE_DIR = Path(tmp)
 
-                engine = sell_engine.PaperTradeEngine()
-                engine.now = lambda: now
+                engine = sell_engine.PaperTradeEngine(clock=FrozenClock(now))
 
                 weak_history = [
                     {
@@ -269,13 +274,15 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
                 sell_engine.BASE_DIR = old_base_dir
 
     def test_same_side_reentry_is_blocked_without_improvement(self):
-        engine = sell_engine.PaperTradeEngine()
+        engine = sell_engine.PaperTradeEngine(
+            clock=FrozenClock(datetime(2026, 3, 28, 10, 5, tzinfo=IST))
+        )
         engine.last_exit_regime = "SELL_PE"
-        engine.last_exit_time = datetime(2026, 3, 28, 10, 0, tzinfo=sell_engine.IST)
+        engine.last_exit_time = datetime(2026, 3, 28, 10, 0, tzinfo=IST)
         engine.last_exit_direction_score = 0.45
 
         allowed = engine.can_take_same_side_reentry(
-            datetime(2026, 3, 28, 10, 5, tzinfo=sell_engine.IST),
+            datetime(2026, 3, 28, 10, 5, tzinfo=IST),
             "SELL_PE",
             0.46,
         )
@@ -315,9 +322,9 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
                 sell_engine.OPEN_POS_FILE = open_pos_file
                 sell_engine.BASE_DIR = Path(tmp)
 
-                engine = sell_engine.PaperTradeEngine()
+                engine = sell_engine.PaperTradeEngine(clock=self.make_clock("2026-03-28T10:05:00"))
                 engine.exit_position(
-                    datetime(2026, 3, 28, 10, 6, tzinfo=sell_engine.IST),
+                    datetime(2026, 3, 28, 10, 6, tzinfo=IST),
                     reason="TEST_EXIT",
                     ltp_map={111: 90.0},
                 )
@@ -331,6 +338,35 @@ class TradeQualityRuleTests(unittest.TestCase, _EngineTempDirMixin):
             finally:
                 sell_engine.OPEN_POS_FILE = old_open_pos
                 sell_engine.BASE_DIR = old_base_dir
+
+    def test_after_force_exit_time_engine_moves_to_done(self):
+        engine = sell_engine.PaperTradeEngine(
+            clock=FrozenClock(datetime(2026, 3, 28, 15, 26, tzinfo=IST))
+        )
+
+        engine.tick(
+            signal=None,
+            regime="WAIT",
+            history=self.make_history(),
+            ltp_map={},
+        )
+
+        self.assertEqual(engine.state, "DONE")
+
+    def test_before_scan_time_engine_stays_flat(self):
+        engine = sell_engine.PaperTradeEngine(
+            clock=FrozenClock(datetime(2026, 3, 28, 9, 19, tzinfo=IST))
+        )
+
+        engine.tick(
+            signal="SELL_PE",
+            regime="SELL_PE",
+            history=self.make_history(),
+            ltp_map={111: 100.0, 222: 100.0},
+        )
+
+        self.assertEqual(engine.state, "FLAT")
+        self.assertIsNone(engine.position)
 
 
 if __name__ == "__main__":

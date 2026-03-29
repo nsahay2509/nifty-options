@@ -1,19 +1,12 @@
-
-# scripts/paper_mtm_engine_buy.py
-
-
-
-import json
 from pathlib import Path
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
+from scripts.app_config import APP_CONFIG, IST
+from scripts.clock import get_clock
 from scripts.logger import get_logger
 from scripts.utils import ensure_complete_ltp_map
 from scripts.state_utils import atomic_write_json, safe_load_json
 
-
-IST = ZoneInfo("Asia/Kolkata")
 logger = get_logger("paper_mtm_buy")
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -41,10 +34,11 @@ def save_last_state(state: dict):
     atomic_write_json(LAST_STATE_FILE, state)
 
 
-def load_realised() -> float:
+def load_realised(clock=None) -> float:
     data = _safe_load_json(PNL_STATE_FILE, {})
 
-    today = datetime.now(IST).strftime("%Y-%m-%d")
+    active_clock = clock or get_clock()
+    today = active_clock.today().strftime("%Y-%m-%d")
     saved_date = data.get("date")
 
     if saved_date != today:
@@ -53,8 +47,9 @@ def load_realised() -> float:
     return float(data.get("realised_today", 0.0))
 
 
-def save_realised(val: float):
-    today = datetime.now(IST).strftime("%Y-%m-%d")
+def save_realised(val: float, clock=None):
+    active_clock = clock or get_clock()
+    today = active_clock.today().strftime("%Y-%m-%d")
 
     atomic_write_json(PNL_STATE_FILE, {
         "date": today,
@@ -89,12 +84,13 @@ def append_row(row):
 # ==================================================
 # CORE ENGINE
 # ==================================================
-def run(ltp_map=None):
+def run(ltp_map=None, clock=None):
 
-    now_dt = datetime.now(IST)
+    active_clock = clock or get_clock()
+    now_dt = active_clock.now()
     now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
-    realised_today = load_realised()
+    realised_today = load_realised(clock=active_clock)
 
     pos = load_open_position()
     last_state = load_last_state()
@@ -122,7 +118,7 @@ def run(ltp_map=None):
         if prev_trade:
             last_unrealised = float(last_state.get("last_unrealised", 0.0))
             realised_today += last_unrealised
-            save_realised(realised_today)
+            save_realised(realised_today, clock=active_clock)
             state = "EXIT"
 
         append_row([
@@ -163,7 +159,7 @@ def run(ltp_map=None):
         logger.error(f"LTP_INCOMPLETE_SKIP_MTM | ids={security_ids} map={ltp_map}")
         return
 
-    LOT_SIZE = 50
+    LOT_SIZE = APP_CONFIG.trade.lot_size
     unrealised = 0.0
 
     for leg in legs:

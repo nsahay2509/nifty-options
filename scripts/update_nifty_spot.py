@@ -7,15 +7,14 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
+from scripts.app_config import IST
+from scripts.clock import get_clock
 from scripts.utils import get_dhan_headers
 from scripts.logger import get_logger
 
 
 # ---------------- CONFIG ----------------
-IST = ZoneInfo("Asia/Kolkata")
-
 logger = get_logger("spot_updater")
 
 URL = "https://api.dhan.co/v2/charts/intraday"
@@ -33,8 +32,9 @@ os.makedirs(OUTDIR, exist_ok=True)
 
 
 # ---------------- HELPERS ----------------
-def today_file():
-    today = datetime.now(IST).strftime("%Y-%m-%d")
+def today_file(clock=None):
+    active_clock = clock or get_clock()
+    today = active_clock.today().strftime("%Y-%m-%d")
     return os.path.join(OUTDIR, f"{today}.jsonl")
 
 
@@ -46,8 +46,9 @@ def parse_ts(s: str) -> datetime:
     return datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=IST)
 
 
-def last_completed_minute() -> datetime:
-    now = datetime.now(IST)
+def last_completed_minute(clock=None) -> datetime:
+    active_clock = clock or get_clock()
+    now = active_clock.now()
     return now.replace(second=0, microsecond=0) - timedelta(minutes=1)
 
 
@@ -134,7 +135,7 @@ def fetch_candle(ts_dt: datetime) -> dict | None:
 
 
 # ---------------- CORE ----------------
-def run():
+def run(clock=None):
     """
     Fetch and append the last completed 1-minute candle safely.
 
@@ -145,8 +146,9 @@ def run():
         - resilient to API fallback behaviour
     """
 
-    target = last_completed_minute()
-    file_path = today_file()
+    active_clock = clock or get_clock()
+    target = last_completed_minute(clock=active_clock)
+    file_path = today_file(clock=active_clock)
 
     last_saved = read_last_timestamp(file_path)
 

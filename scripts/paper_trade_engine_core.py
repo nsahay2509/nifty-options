@@ -2,31 +2,17 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, time as dtime
 import csv
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
+from scripts.app_config import APP_CONFIG, IST
+from scripts.clock import get_clock
 from scripts.logger import get_logger
 from scripts.option_resolver import get_atm_straddle
 from scripts.regime_classifier import bias as regime_bias
-from scripts.regime_classifier import TREND_D_MIN, direction_score, load_last_candles
+from scripts.regime_classifier import direction_score, load_last_candles
 from scripts.state_utils import atomic_write_json, safe_load_json
 from scripts.utils import fetch_ltp_map
 
-
-IST = ZoneInfo("Asia/Kolkata")
-
-START_SCAN = dtime(9, 20)
-NO_NEW_ENTRY_AFTER = dtime(15, 15)
-FORCE_EXIT_TIME = dtime(15, 25)
-
-WINDOW = 25
-COOLDOWN_MINUTES = 5
-LOTS = 1
-MIN_HOLD_MINUTES = 3
-MAX_TRADE_LOSS = 600.0
-PROFIT_TRAIL_ARM = 400.0
-PROFIT_TRAIL_GIVEBACK = 250.0
-REENTRY_BLOCK_MINUTES = 15
-REENTRY_MIN_D_IMPROVEMENT = 0.05
+CONFIG = APP_CONFIG.trade
 
 
 @dataclass
@@ -38,7 +24,7 @@ class Position:
     ce_security_id: int | None
     pe_security_id: int | None
     entry_time: datetime
-    lots: int = LOTS
+    lots: int = CONFIG.lots
     side: str = ""
     entry_signal: str | None = None
     entry_spot: float = 0.0
@@ -54,7 +40,8 @@ class BasePaperTradeEngine:
     stale_position_check_error_code = "STALE_POSITION_CHECK_FAILED"
     entry_invalid_regime_message = None
 
-    def __init__(self):
+    def __init__(self, clock=None):
+        self.clock = clock or get_clock()
         self.state = "FLAT"
         self.position: Position | None = None
         self.cooldown_until: datetime | None = None
@@ -68,13 +55,13 @@ class BasePaperTradeEngine:
         self.logger.info("PaperTradeEngine initialized")
 
     def now(self) -> datetime:
-        return datetime.now(IST)
+        return self.clock.now()
 
     def should_force_exit(self, now: datetime) -> bool:
-        return now.time() >= FORCE_EXIT_TIME
+        return now.time() >= CONFIG.force_exit_time
 
     def can_open_new(self, now: datetime) -> bool:
-        return now.time() <= NO_NEW_ENTRY_AFTER
+        return now.time() <= CONFIG.no_new_entry_after
 
     def get_open_position_file(self) -> Path:
         raise NotImplementedError
@@ -132,7 +119,7 @@ class BasePaperTradeEngine:
                 ce_security_id=int(ce_leg["security_id"]) if ce_leg else None,
                 pe_security_id=int(pe_leg["security_id"]) if pe_leg else None,
                 entry_time=entry_time,
-                lots=int((ce_leg or pe_leg or {}).get("lots", LOTS)),
+                lots=int((ce_leg or pe_leg or {}).get("lots", CONFIG.lots)),
                 side=data.get("side", self.get_side()),
                 entry_signal=data.get("entry_signal"),
                 entry_spot=float(data.get("entry_spot", 0.0)),
@@ -230,12 +217,12 @@ class BasePaperTradeEngine:
         if regime != self.last_exit_regime or self.last_exit_time is None:
             return True
 
-        blocked_until = self.last_exit_time + timedelta(minutes=REENTRY_BLOCK_MINUTES)
+        blocked_until = self.last_exit_time + timedelta(minutes=CONFIG.reentry_block_minutes)
         if now >= blocked_until:
             return True
 
         last_d = self.last_exit_direction_score if self.last_exit_direction_score is not None else 0.0
-        if d >= last_d + REENTRY_MIN_D_IMPROVEMENT:
+        if d >= last_d + CONFIG.reentry_min_d_improvement:
             return True
 
         self.logger.info(
@@ -311,7 +298,7 @@ class BasePaperTradeEngine:
         self.reset_for_new_day(now)
         self.check_for_stale_position(now)
 
-        if now.time() < START_SCAN:
+        if now.time() < CONFIG.start_scan:
             return
 
         if self.should_force_exit(now):
@@ -330,9 +317,9 @@ class BasePaperTradeEngine:
                 return
 
         if history is None:
-            history = load_last_candles(WINDOW)
+            history = load_last_candles(CONFIG.window, clock=self.clock)
 
-        if len(history) < WINDOW:
+        if len(history) < CONFIG.window:
             self.logger.debug("Not enough candles yet")
             return
 
@@ -357,9 +344,9 @@ class BasePaperTradeEngine:
         current_total = self.compute_live_pnl(ltp_map)
         self.max_pnl = max(self.max_pnl, current_total)
 
-        if current_total <= -MAX_TRADE_LOSS:
+        if current_total <= -CONFIG.max_trade_loss:
             self.exit_position(now, reason=f"HARD_STOP {current_total:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
             self.state = "COOLDOWN"
             self.logger.info(
                 f"Hard stop hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
@@ -368,21 +355,25 @@ class BasePaperTradeEngine:
 
         drawdown = self.max_pnl - current_total
         minutes_in_trade = self.get_minutes_in_trade(now)
-        if minutes_in_trade >= MIN_HOLD_MINUTES and self.max_pnl >= PROFIT_TRAIL_ARM and drawdown >= PROFIT_TRAIL_GIVEBACK:
+        if (
+            minutes_in_trade >= CONFIG.min_hold_minutes
+            and self.max_pnl >= CONFIG.profit_trail_arm
+            and drawdown >= CONFIG.profit_trail_giveback
+        ):
             self.exit_position(now, reason=f"TRAIL_PROFIT {drawdown:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
             self.state = "COOLDOWN"
             self.logger.info(
                 f"Profit trail hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
             )
             return
 
-        if minutes_in_trade < MIN_HOLD_MINUTES:
+        if minutes_in_trade < CONFIG.min_hold_minutes:
             return
 
-        if self.active_regime in ("SELL_PE", "SELL_CE") and current_d < TREND_D_MIN:
+        if self.active_regime in ("SELL_PE", "SELL_CE") and current_d < APP_CONFIG.regime.trend_d_min:
             self.exit_position(now, reason=f"TREND_WEAK d={current_d:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
             self.state = "COOLDOWN"
             self.logger.info(
                 f"Trend weakened -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
@@ -398,7 +389,7 @@ class BasePaperTradeEngine:
                 reason=f"REGIME_CHANGE {self.active_regime}->{regime}",
                 ltp_map=ltp_map,
             )
-            self.cooldown_until = now + timedelta(minutes=COOLDOWN_MINUTES)
+            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
             self.state = "COOLDOWN"
             self.logger.info(
                 f"Entering cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
@@ -413,11 +404,11 @@ class BasePaperTradeEngine:
         spot = history[-1]["close"]
         d = direction_score(history)
         b = regime_bias(history)
-        atm = get_atm_straddle(spot)
+        atm = get_atm_straddle(spot, clock=self.clock)
         self.max_pnl = 0
         ce_id, pe_id = self.resolve_entry_ids(regime, atm)
 
-        trade_id = datetime.now(IST).strftime("%Y%m%d_%H%M%S")
+        trade_id = self.now().strftime("%Y%m%d_%H%M%S")
         security_ids = [sid for sid in (ce_id, pe_id) if sid]
         if ltp_map is None:
             ltp_map = fetch_ltp_map(security_ids)
@@ -436,7 +427,7 @@ class BasePaperTradeEngine:
             ce_security_id=ce_id,
             pe_security_id=pe_id,
             entry_time=now,
-            lots=LOTS,
+            lots=CONFIG.lots,
             side=self.get_side(),
             entry_signal=signal,
             entry_spot=float(spot),
@@ -505,7 +496,7 @@ class BasePaperTradeEngine:
             return 0
 
         pnl = 0.0
-        lot_size = 50
+        lot_size = CONFIG.lot_size
 
         for leg in pos.get("legs", []):
             sid = int(leg["security_id"])

@@ -5,11 +5,13 @@ from datetime import datetime
 import json
 import logging
 
+from scripts.app_config import APP_CONFIG
+from scripts.clock import get_clock
 
 log_path = Path(__file__).resolve().parents[1] / "data" / "logs" / "regime_debug.log"
 
 logger = logging.getLogger("regime_debug")
-ENABLE_STRADDLE = False
+CONFIG = APP_CONFIG.regime
 
 if not logger.handlers:
     logger.setLevel(logging.INFO)
@@ -20,28 +22,13 @@ if not logger.handlers:
 
     logger.addHandler(handler)
 
-# ---------------- CONFIG ----------------
-WINDOW = 25                 # minutes used for regime detection
-MIN_TRADE_TIME = (9, 20)    # avoid unstable open
-
-# --- thresholds (tune) ---
-STRADDLE_D_MAX = 0.30       # was 0.30 (looser => more straddles)
-STRADDLE_COMP_MAX = 0.95    # was 0.70 (looser => more straddles)
-
-TREND_D_MIN = 0.32          # trend threshold (keep as-is initially)
-
-# Optional: block straddle when the last WINDOW range is too large
-# (prevents selling straddle in high-vol expansion)
-USE_RANGE_GUARD = True
-MAX_WINDOW_RANGE_POINTS = 180.0   # adjust for NIFTY; start conservative
-
-
 # ---------------- DATA LOADER ----------------
-def load_last_candles(n: int):
+def load_last_candles(n: int, clock=None):
     base_dir = Path(__file__).resolve().parents[1]
     spot_dir = base_dir / "data" / "spot"
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    active_clock = clock or get_clock()
+    today = active_clock.today().strftime("%Y-%m-%d")
     file_path = spot_dir / f"{today}.jsonl"
 
     if not file_path.exists():
@@ -96,17 +83,17 @@ def window_range(candles):
 
 
 # ---------------- REGIME ENGINE ----------------
-def classify_regime(candles=None):
+def classify_regime(candles=None, clock=None):
     if candles is None:
-        candles = load_last_candles(WINDOW)
+        candles = load_last_candles(CONFIG.window, clock=clock)
 
-    if len(candles) < WINDOW:
+    if len(candles) < CONFIG.window:
         return "WAIT"
 
     # avoid early noise
     ts = candles[-1]["ts"]
     dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-    if (dt.hour, dt.minute) < MIN_TRADE_TIME:
+    if (dt.hour, dt.minute) < CONFIG.min_trade_time:
         return "WAIT"
 
     # ---- metrics ----
@@ -119,13 +106,13 @@ def classify_regime(candles=None):
     logger.info(f"{ts} | d={d:.3f} b={b:.1f} comp={comp:.2f} range={rng:.1f}")
 
     # ---- straddle regime ----
-    if ENABLE_STRADDLE:
-        if d <= STRADDLE_D_MAX and comp <= STRADDLE_COMP_MAX:
-            if not USE_RANGE_GUARD or rng <= MAX_WINDOW_RANGE_POINTS:
+    if CONFIG.enable_straddle:
+        if d <= CONFIG.straddle_d_max and comp <= CONFIG.straddle_comp_max:
+            if not CONFIG.use_range_guard or rng <= CONFIG.max_window_range_points:
                 return "SELL_STRADDLE"
 
     # ---- trend regimes ----
-    if d >= TREND_D_MIN:
+    if d >= CONFIG.trend_d_min:
         if b > 20:
             return "SELL_PE"
         if b < -5:

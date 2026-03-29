@@ -6,8 +6,9 @@
 
 
 from pathlib import Path
-from datetime import datetime
 import pandas as pd
+
+from scripts.clock import get_clock
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 INSTRUMENT_FILE = BASE_DIR / "data" / "dhan_instruments.csv"
@@ -43,8 +44,9 @@ def load_instruments():
 # -------------------------------------------------
 # GET NEAREST EXPIRY
 # -------------------------------------------------
-def get_nearest_expiry(df):
-    today = pd.Timestamp(datetime.now().date())
+def get_nearest_expiry(df, clock=None):
+    active_clock = clock or get_clock()
+    today = pd.Timestamp(active_clock.today())
 
     expiries = sorted(
         e for e in df["SM_EXPIRY_DATE"].unique()
@@ -60,14 +62,14 @@ def get_nearest_expiry(df):
 # -------------------------------------------------
 # ATM STRADDLE RESOLVER
 # -------------------------------------------------
-def get_atm_straddle(spot: float):
+def get_atm_straddle(spot: float, clock=None):
 
     df = load_instruments()
 
     # NIFTY strike spacing
     strike = round(spot / 50) * 50
 
-    expiry = get_nearest_expiry(df)
+    expiry = get_nearest_expiry(df, clock=clock)
 
     df_exp = df[
         (df["SM_EXPIRY_DATE"] == expiry) &

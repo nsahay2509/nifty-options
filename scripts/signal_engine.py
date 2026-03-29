@@ -5,17 +5,16 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
-from zoneinfo import ZoneInfo
 
+from scripts.app_config import APP_CONFIG
+from scripts.clock import get_clock
 from scripts.regime_classifier import classify_regime
 from scripts.state_utils import atomic_write_json
 
 
 # ---------------- CONFIG ----------------
 STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "signal_state.json"
-
-MIN_GAP_MINUTES = 10      # prevent over-trading
-REGIME_PERSISTENCE = 2    # candles required to confirm regime
+CONFIG = APP_CONFIG.signal
 
 
 # ---------------- STATE ----------------
@@ -49,17 +48,18 @@ def save_state(state):
 
 
 # ---------------- CORE ENGINE ----------------
-def generate_signal(history):
+def generate_signal(history, clock=None):
 
     state = load_state()
 
-    raw_regime = classify_regime(history)
+    active_clock = clock or get_clock()
+    raw_regime = classify_regime(history, clock=active_clock)
     confirmed_regime = state["confirmed_regime"]
 
     candidate = state["candidate_regime"]
     count = state["candidate_count"]
 
-    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    now = active_clock.now()
 
     # ==================================================
     # REGIME PERSISTENCE LOGIC
@@ -73,7 +73,7 @@ def generate_signal(history):
     new_confirmed = confirmed_regime
 
     # confirm regime only after persistence
-    if count >= REGIME_PERSISTENCE:
+    if count >= CONFIG.regime_persistence:
         new_confirmed = candidate
 
     # ==================================================
@@ -91,7 +91,7 @@ def generate_signal(history):
         if last_time:
             last_time = datetime.fromisoformat(last_time)
 
-            if now - last_time >= timedelta(minutes=MIN_GAP_MINUTES):
+            if now - last_time >= timedelta(minutes=CONFIG.min_gap_minutes):
                 signal = new_confirmed
         else:
             signal = new_confirmed

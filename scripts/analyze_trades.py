@@ -15,6 +15,8 @@ from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
+from scripts.app_config import APP_CONFIG
+
 # ---------- paths ----------
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -33,10 +35,6 @@ TRADE_EVENTS_BUY_FILE = RESULT_DIR / "trade_events_buy.csv"
 TRADE_QUALITY_FILE = RESULT_DIR / "trade_quality_summary.csv"
 TRADE_QUALITY_BUY_FILE = RESULT_DIR / "trade_quality_summary_buy.csv"
 TRADE_QUALITY_COMBINED_FILE = RESULT_DIR / "trade_quality_summary_combined.csv"
-
-# approx cost per trade
-TRADE_COST = 100
-
 
 def parse_time(ts):
     return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
@@ -161,7 +159,7 @@ def update_daily_summary(trades, daily_summary_file):
 
         gross_pnl = sum(t["trade_pnl"] for t in trade_list)
 
-        estimated_cost = total_trades * TRADE_COST
+        estimated_cost = total_trades * APP_CONFIG.reporting.trade_cost
         net_pnl = gross_pnl - estimated_cost
 
         existing_rows[date] = [

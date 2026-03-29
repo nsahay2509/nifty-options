@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from scripts.logger import get_logger
-from scripts.paper_trade_engine_core import BasePaperTradeEngine, IST, LOTS, Position
+from scripts.app_config import APP_CONFIG
+from scripts.paper_trade_engine_core import BasePaperTradeEngine, Position
 
 
 logger = get_logger("paper_trade_buy")
@@ -52,7 +53,7 @@ class PaperTradeEngine(BasePaperTradeEngine):
         return (
             f"ENTRY | BUY_FROM_{regime} | spot={spot:.2f} "
             f"strike={atm['strike']} exp={atm['expiry']} "
-            f"ce_id={ce_id} pe_id={pe_id} lots={LOTS}"
+            f"ce_id={ce_id} pe_id={pe_id} lots={APP_CONFIG.trade.lots}"
         )
 
     def compute_leg_pnl(self, entry: float, ltp: float, qty: int) -> float:
