@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from scripts.app_config import APP_CONFIG
 from scripts.logger import get_logger
-from scripts.models import DailySummaryRow, TradeSummaryRow
+from scripts.models import DailySummaryRow, TradeEventRow, TradeSummaryRow
 
 # ---------- paths ----------
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -64,6 +64,13 @@ TRADE_QUALITY_FIELDS = [
     "entry_bias",
     "exit_reason",
     "trade_pnl",
+    "exit_spot",
+    "exit_direction_score",
+    "exit_bias",
+    "peak_pnl",
+    "drawdown_from_peak",
+    "cooldown_applied_min",
+    "diagnostic_context",
 ]
 
 REPORT_SPECS = {
@@ -221,6 +228,28 @@ def run_analysis(system_pnl_file, trade_summary_file, daily_summary_file):
     return trades
 
 
+def extract_trades_from_events(source_file):
+    if not Path(source_file).exists():
+        return []
+
+    with open(source_file) as f:
+        rows = [TradeEventRow.from_dict(row) for row in csv.DictReader(f)]
+
+    return [
+        TradeSummaryRow(
+            trade_id=row.trade_id,
+            entry_time=row.entry_time,
+            exit_time=row.exit_time,
+            time_in_trade_min=row.time_in_trade_min,
+            trade_type=row.regime,
+            strike=str(row.strike),
+            expiry=row.expiry,
+            trade_pnl=round(row.trade_pnl, 2),
+        ).to_dict()
+        for row in rows
+    ]
+
+
 def export_trade_quality_summary(source_file, target_file):
     if not Path(source_file).exists():
         write_csv_rows(target_file, TRADE_QUALITY_FIELDS, [])
@@ -235,11 +264,16 @@ def export_trade_quality_summary(source_file, target_file):
 
 
 def run_reporting_spec(spec: dict):
-    trades = run_analysis(
-        spec["system_pnl"],
-        spec["trade_summary"],
-        spec["daily_summary"],
-    )
+    if APP_CONFIG.reporting.prefer_trade_events:
+        trades = extract_trades_from_events(spec["trade_events"])
+        update_trade_summary(trades, spec["trade_summary"])
+        update_daily_summary(trades, spec["daily_summary"])
+    else:
+        trades = run_analysis(
+            spec["system_pnl"],
+            spec["trade_summary"],
+            spec["daily_summary"],
+        )
     logger.info(f"{spec['label']} trade summary updated: {spec['trade_summary']}")
     logger.info(f"{spec['label']} daily summary updated: {spec['daily_summary']}")
 

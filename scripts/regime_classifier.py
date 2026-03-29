@@ -113,9 +113,9 @@ def classify_regime(candles=None, clock=None):
 
     # ---- trend regimes ----
     if d >= CONFIG.trend_d_min:
-        if b > 20:
+        if b > CONFIG.bullish_bias_threshold:
             return "SELL_PE"
-        if b < -5:
+        if b < CONFIG.bearish_bias_threshold:
             return "SELL_CE"
 
     return "WAIT"

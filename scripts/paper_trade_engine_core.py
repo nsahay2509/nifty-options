@@ -52,6 +52,7 @@ class BasePaperTradeEngine:
         self.last_exit_regime: str | None = None
         self.last_exit_time: datetime | None = None
         self.last_exit_direction_score: float | None = None
+        self.last_exit_bias: float | None = None
         self.sync_from_disk()
         self.logger.info("PaperTradeEngine initialized")
 
@@ -226,8 +227,16 @@ class BasePaperTradeEngine:
         if d >= last_d + CONFIG.reentry_min_d_improvement:
             return True
 
+        current_bias = getattr(self, "_latest_bias", 0.0)
+        last_bias = self.last_exit_bias if self.last_exit_bias is not None else 0.0
+        if abs(current_bias) >= abs(last_bias) + CONFIG.reentry_min_bias_improvement:
+            return True
+
         self.logger.info(
-            f"REENTRY_BLOCKED | regime={regime} d={d:.3f} last_d={last_d:.3f} until={blocked_until.strftime('%H:%M:%S')}"
+            "REENTRY_BLOCKED | "
+            f"regime={regime} d={d:.3f} last_d={last_d:.3f} "
+            f"bias={current_bias:.2f} last_bias={last_bias:.2f} "
+            f"until={blocked_until.strftime('%H:%M:%S')}"
         )
         return False
 
@@ -254,6 +263,13 @@ class BasePaperTradeEngine:
                     "entry_bias",
                     "exit_reason",
                     "trade_pnl",
+                    "exit_spot",
+                    "exit_direction_score",
+                    "exit_bias",
+                    "peak_pnl",
+                    "drawdown_from_peak",
+                    "cooldown_applied_min",
+                    "diagnostic_context",
                 ])
 
             writer.writerow([
@@ -271,7 +287,24 @@ class BasePaperTradeEngine:
                 event["entry_bias"],
                 event["exit_reason"],
                 event["trade_pnl"],
+                event.get("exit_spot", 0.0),
+                event.get("exit_direction_score", 0.0),
+                event.get("exit_bias", 0.0),
+                event.get("peak_pnl", 0.0),
+                event.get("drawdown_from_peak", 0.0),
+                event.get("cooldown_applied_min", 0),
+                event.get("diagnostic_context", ""),
             ])
+
+    def set_cooldown(self, now: datetime, *, minutes: int, message: str):
+        self.cooldown_until = now + timedelta(minutes=minutes)
+        self.state = "COOLDOWN"
+        self.logger.info(f"{message} until {self.cooldown_until.strftime('%H:%M:%S')}")
+
+    def get_cooldown_minutes_for_pnl(self, pnl: float) -> int:
+        if pnl < 0:
+            return max(CONFIG.cooldown_minutes, CONFIG.loss_cooldown_minutes)
+        return CONFIG.cooldown_minutes
 
     def check_for_stale_position(self, now: datetime):
         try:
@@ -327,6 +360,8 @@ class BasePaperTradeEngine:
         self.logger.info(f"SIGNAL_CHECK | signal={signal} regime={regime}")
 
         current_d = direction_score(history)
+        current_bias = regime_bias(history)
+        self._latest_bias = current_bias
 
         if self.state == "FLAT":
             if (
@@ -347,10 +382,10 @@ class BasePaperTradeEngine:
 
         if current_total <= -CONFIG.max_trade_loss:
             self.exit_position(now, reason=f"HARD_STOP {current_total:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
-            self.state = "COOLDOWN"
-            self.logger.info(
-                f"Hard stop hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+            self.set_cooldown(
+                now,
+                minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                message="Hard stop hit -> cooldown",
             )
             return
 
@@ -358,26 +393,48 @@ class BasePaperTradeEngine:
         minutes_in_trade = self.get_minutes_in_trade(now)
         if (
             minutes_in_trade >= CONFIG.min_hold_minutes
+            and self.max_pnl >= CONFIG.breakeven_arm
+            and current_total <= CONFIG.breakeven_buffer
+        ):
+            self.exit_position(now, reason=f"BREAKEVEN_LOCK {current_total:.2f}", ltp_map=ltp_map)
+            self.set_cooldown(
+                now,
+                minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                message="Breakeven lock hit -> cooldown",
+            )
+            return
+        if (
+            minutes_in_trade >= CONFIG.min_hold_minutes
             and self.max_pnl >= CONFIG.profit_trail_arm
             and drawdown >= CONFIG.profit_trail_giveback
         ):
             self.exit_position(now, reason=f"TRAIL_PROFIT {drawdown:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
-            self.state = "COOLDOWN"
-            self.logger.info(
-                f"Profit trail hit -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+            self.set_cooldown(
+                now,
+                minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                message="Profit trail hit -> cooldown",
             )
             return
 
         if minutes_in_trade < CONFIG.min_hold_minutes:
             return
 
+        if minutes_in_trade >= CONFIG.max_trade_duration_minutes:
+            if not CONFIG.allow_time_stop_only_if_profitable or current_total > 0:
+                self.exit_position(now, reason=f"TIME_STOP {minutes_in_trade:.1f}m", ltp_map=ltp_map)
+                self.set_cooldown(
+                    now,
+                    minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                    message="Time stop hit -> cooldown",
+                )
+                return
+
         if self.active_regime in ("SELL_PE", "SELL_CE") and current_d < APP_CONFIG.regime.trend_d_min:
             self.exit_position(now, reason=f"TREND_WEAK d={current_d:.2f}", ltp_map=ltp_map)
-            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
-            self.state = "COOLDOWN"
-            self.logger.info(
-                f"Trend weakened -> cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+            self.set_cooldown(
+                now,
+                minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                message="Trend weakened -> cooldown",
             )
             return
 
@@ -390,10 +447,10 @@ class BasePaperTradeEngine:
                 reason=f"REGIME_CHANGE {self.active_regime}->{regime}",
                 ltp_map=ltp_map,
             )
-            self.cooldown_until = now + timedelta(minutes=CONFIG.cooldown_minutes)
-            self.state = "COOLDOWN"
-            self.logger.info(
-                f"Entering cooldown until {self.cooldown_until.strftime('%H:%M:%S')}"
+            self.set_cooldown(
+                now,
+                minutes=self.get_cooldown_minutes_for_pnl(current_total),
+                message="Regime change -> cooldown",
             )
 
     def enter_position(self, now: datetime, regime: str, history, ltp_map=None, signal=None):
@@ -438,7 +495,10 @@ class BasePaperTradeEngine:
 
         self.state = "IN_POSITION"
         self.active_regime = regime
-        self.logger.info(self.format_entry_message(regime, spot, atm, ce_id, pe_id))
+        self.logger.info(
+            self.format_entry_message(regime, spot, atm, ce_id, pe_id)
+            + f" d={d:.3f} bias={b:.2f} signal={signal}"
+        )
         self.write_open_position(self.position, ltp_map)
 
     def exit_position(self, now: datetime, reason: str, ltp_map=None):
@@ -447,9 +507,20 @@ class BasePaperTradeEngine:
 
         p = self.position
         live_pnl = self.compute_live_pnl(ltp_map)
+        peak_pnl = self.max_pnl
+        drawdown = peak_pnl - live_pnl
+        exit_history = load_last_candles(CONFIG.window, clock=self.clock)
+        exit_spot = p.entry_spot
+        exit_d = p.entry_direction_score
+        exit_bias = p.entry_bias
+        if len(exit_history) >= CONFIG.window:
+            exit_spot = float(exit_history[-1]["close"])
+            exit_d = float(direction_score(exit_history))
+            exit_bias = float(regime_bias(exit_history))
         self.logger.info(
             f"EXIT | {p.regime} | strike={p.strike} "
-            f"exp={p.expiry} lots={p.lots} reason={reason}"
+            f"exp={p.expiry} lots={p.lots} reason={reason} "
+            f"pnl={live_pnl:.2f} peak={peak_pnl:.2f} dd={drawdown:.2f}"
         )
 
         self.append_trade_event({
@@ -467,11 +538,22 @@ class BasePaperTradeEngine:
             "entry_bias": round(p.entry_bias, 2),
             "exit_reason": reason,
             "trade_pnl": round(live_pnl, 2),
+            "exit_spot": round(exit_spot, 2),
+            "exit_direction_score": round(exit_d, 4),
+            "exit_bias": round(exit_bias, 2),
+            "peak_pnl": round(peak_pnl, 2),
+            "drawdown_from_peak": round(drawdown, 2),
+            "cooldown_applied_min": self.get_cooldown_minutes_for_pnl(live_pnl),
+            "diagnostic_context": (
+                f"entry_d={p.entry_direction_score:.3f};exit_d={exit_d:.3f};"
+                f"entry_bias={p.entry_bias:.2f};exit_bias={exit_bias:.2f}"
+            ),
         })
 
         self.last_exit_regime = p.regime
         self.last_exit_time = now
         self.last_exit_direction_score = p.entry_direction_score
+        self.last_exit_bias = p.entry_bias
         self.close_open_position()
         self.position = None
         self.active_regime = None

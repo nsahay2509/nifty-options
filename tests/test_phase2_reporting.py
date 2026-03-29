@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from scripts.analyze_trades import (
+    extract_trades_from_events,
     export_trade_quality_summary,
     run_analysis,
     update_daily_summary,
@@ -180,6 +181,31 @@ class AnalyzeTradesTests(unittest.TestCase):
 
             rows = self.read_rows(path)
             self.assertEqual(rows, [["a", "b"], ["1", "2"]])
+
+    def test_extract_trades_from_events_uses_trade_event_log(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "trade_events.csv"
+            with source.open("w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "side", "trade_id", "regime", "entry_signal", "entry_time", "exit_time",
+                    "time_in_trade_min", "strike", "expiry", "entry_spot", "entry_direction_score",
+                    "entry_bias", "exit_reason", "trade_pnl", "exit_spot", "exit_direction_score",
+                    "exit_bias", "peak_pnl", "drawdown_from_peak", "cooldown_applied_min",
+                    "diagnostic_context",
+                ])
+                writer.writerow([
+                    "SELL", "t1", "SELL_PE", "SELL_PE", "2026-03-28 10:00:05", "2026-03-28 10:05:05",
+                    "5", "22500", "2026-03-30", "22500.0", "0.45", "25.0", "TRAIL_PROFIT", "150.0",
+                    "22520.0", "0.30", "20.0", "220.0", "70.0", "5", "ctx",
+                ])
+
+            trades = extract_trades_from_events(source)
+
+            self.assertEqual(len(trades), 1)
+            self.assertEqual(trades[0]["trade_id"], "t1")
+            self.assertEqual(trades[0]["trade_type"], "SELL_PE")
+            self.assertEqual(trades[0]["trade_pnl"], 150.0)
 
 
 if __name__ == "__main__":
