@@ -24,15 +24,21 @@ htmlcov/
 # =====================================================
 # Runtime DATA (DO NOT VERSION)
 # =====================================================
-# data/logs/
-# data/results/
+data/logs/
+logs/*.log
+data/results/*.csv
+!data/results/.gitkeep
 data/spot/
 
 # runtime state files
-# data/open_position.json
-# data/last_state.json
-# data/pnl_state.json
-# data/signal_state.json
+data/dashboard_state.json
+data/open_position.json
+data/open_position_buy.json
+data/last_state.json
+data/last_state_buy.json
+data/pnl_state.json
+data/pnl_state_buy.json
+data/signal_state.json
 
 # temp / validation datasets
 data/spot_validation/
@@ -47,7 +53,6 @@ secrets.json
 # =====================================================
 # Shell artifacts
 # =====================================================
-# *.log
 nohup.out
 
 # =====================================================

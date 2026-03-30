@@ -6,6 +6,10 @@ cd "$(dirname "$0")"
 
 source venv/bin/activate
 
+if [ -z "${DHAN_ENV_FILE:-}" ] && [ -f "/home/ubuntu/nseo/.env" ]; then
+    export DHAN_ENV_FILE="/home/ubuntu/nseo/.env"
+fi
+
 echo "Starting NIFTY Evaluator with auto-restart..."
 
 while true

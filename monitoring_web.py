@@ -69,6 +69,8 @@ def render_index():
 <html>
 <head>
   <title>NIFTY Monitor</title>
+  <link rel="icon" href="/static/favicon.ico" />
+  <link rel="shortcut icon" href="/static/favicon.ico" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
@@ -310,6 +312,20 @@ class MonitoringHandler(BaseHTTPRequestHandler):
 
         if path == "/":
             self.send_html(render_index(), head_only=head_only)
+            return
+
+        if path == "/static/favicon.ico":
+            favicon_path = BASE_DIR / "static" / "favicon.ico"
+            if favicon_path.exists():
+                data = favicon_path.read_bytes()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "image/x-icon")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                if not head_only:
+                    self.wfile.write(data)
+                return
+            self.send_json({"error": "not_found"}, status=HTTPStatus.NOT_FOUND, head_only=head_only)
             return
 
         if path == "/api/dashboard":
