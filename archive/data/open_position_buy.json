@@ -1,0 +1,21 @@
+{
+  "status": "CLOSED",
+  "trade_id": "20260406_101506",
+  "regime": "SELL_PE",
+  "strike": 22650,
+  "expiry": "2026-04-28",
+  "entry_time": "2026-04-06 10:15:06",
+  "side": "BUY",
+  "entry_signal": "SELL_PE",
+  "entry_spot": 22663.9,
+  "entry_direction_score": 0.9677242888403321,
+  "entry_bias": 88.45000000000073,
+  "legs": [
+    {
+      "security_id": 72162,
+      "entry_price": 685.0,
+      "lots": 1,
+      "type": "CE"
+    }
+  ]
+}

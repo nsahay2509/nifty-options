@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-04-06 10:42:05",
+  "cycle_started_at": "2026-04-06 10:42:05",
+  "updater_ok": true,
+  "experiment": "baseline_trend_follow",
+  "signal": {
+    "last_regime": "WAIT",
+    "candidate_regime": "WAIT",
+    "candidate_count": 7,
+    "confirmed_regime": "WAIT",
+    "last_signal_time": "2026-04-06 10:15:05 IST"
+  },
+  "positions": {
+    "sell": null,
+    "buy": null
+  },
+  "pnl": {
+    "sell": {
+      "timestamp": "2026-04-06 10:42:05",
+      "state": "FLAT",
+      "trade_id": "",
+      "realised": 795.0,
+      "unrealised": 0.0,
+      "total": 795.0
+    },
+    "buy": {
+      "timestamp": "2026-04-06 10:42:05",
+      "state": "FLAT",
+      "trade_id": "",
+      "realised": 930.0,
+      "unrealised": 0.0,
+      "total": 930.0
+    }
+  }
+}

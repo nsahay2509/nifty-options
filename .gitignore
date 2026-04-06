@@ -25,6 +25,7 @@ htmlcov/
 # Runtime DATA (DO NOT VERSION)
 # =====================================================
 data/logs/
+data/market_data/
 logs/*.log
 data/results/*.csv
 !data/results/.gitkeep
