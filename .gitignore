@@ -26,6 +26,8 @@ htmlcov/
 # =====================================================
 data/logs/
 data/market_data/
+data/records/
+data/reports/
 logs/*.log
 data/results/*.csv
 !data/results/.gitkeep

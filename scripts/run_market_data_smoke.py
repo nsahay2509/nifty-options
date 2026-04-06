@@ -14,6 +14,7 @@ from scripts.instrument_resolver import resolve_base_instruments
 from scripts.log import configure_logging, get_logger
 from scripts.market_calendar import MarketCalendar
 from scripts.market_data import MarketDataService
+from scripts.run_research import evaluate_completed_candles
 from scripts.runtime_controller import RuntimeController
 
 if __package__ in {None, ""}:
@@ -59,6 +60,8 @@ async def main() -> None:
     market_data = MarketDataService()
     feed = DhanMarketFeed(credentials)
     tick_counter = 0
+    session_candles: list = []
+    futures_candles: list = []
 
     async def handle_tick(tick) -> bool:
         nonlocal tick_counter
@@ -83,6 +86,23 @@ async def main() -> None:
                 candle.volume,
                 candle.tick_count,
             )
+            if candle.interval_min == 1:
+                if candle.instrument.instrument_type == "INDEX":
+                    session_candles.append(candle)
+                elif candle.instrument.instrument_type == "FUTURES":
+                    futures_candles.append(candle)
+                result = evaluate_completed_candles(
+                    session_candles=session_candles,
+                    futures_candles=futures_candles,
+                )
+                if result is not None:
+                    logger.info(
+                        "PAPER_EVAL_RESULT | state=%s playbook=%s structure=%s no_trade=%s",
+                        result.state_assessment.state_name,
+                        result.playbook_decision.playbook_name,
+                        result.structure_proposal.structure_type,
+                        result.playbook_decision.no_trade,
+                    )
         if tick_counter >= 20:
             logger.info("SMOKE_STOP | reason=max_ticks_reached ticks=%s", tick_counter)
             return False
