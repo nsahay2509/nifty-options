@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import signal
 import sys
 from pathlib import Path
 
@@ -15,6 +16,8 @@ from scripts.instrument_resolver import resolve_base_instruments
 from scripts.log import configure_logging, get_logger
 from scripts.market_calendar import MarketCalendar
 from scripts.market_data import MarketDataService
+from scripts.option_resolver import resolve_nifty_option_basket
+from scripts.paper_mtm import PaperMtmTracker
 from scripts.reporting import ReportingService
 from scripts.run_research import evaluate_completed_candles
 from scripts.runtime_controller import RuntimeController
@@ -48,8 +51,19 @@ async def main() -> None:
 
     credentials = load_dhan_credentials()
     resolved = resolve_base_instruments(as_of=decision.trading_day)
-    instruments = [resolved.index, resolved.futures]
     prior_day_candles = load_prior_day_index_candles(decision.trading_day, calendar=calendar)
+    option_anchor = prior_day_candles[-1].close if prior_day_candles else 23000.0
+    try:
+        option_instruments = resolve_nifty_option_basket(
+            center_price=option_anchor,
+            expiry_hint="same_week",
+            as_of=decision.trading_day,
+            breadth_steps=12,
+        )
+    except Exception as exc:
+        logger.warning("PAPER_EVAL_OPTION_BASKET_SKIP | reason=%s", exc)
+        option_instruments = []
+    instruments = [resolved.index, resolved.futures, *option_instruments]
 
     logger.info(
         "PAPER_EVAL_START | trading_day=%s prior_day_candles=%s instruments=%s",
@@ -62,6 +76,24 @@ async def main() -> None:
     feed = DhanMarketFeed(credentials)
     recorder = TradeRecorder()
     reporter = ReportingService()
+    mtm_tracker = PaperMtmTracker()
+    stop_event = asyncio.Event()
+    shutdown_reason = "session_end"
+
+    def request_stop(reason: str) -> None:
+        nonlocal shutdown_reason
+        if stop_event.is_set():
+            return
+        shutdown_reason = reason
+        logger.info("PAPER_EVAL_STOP_REQUESTED | reason=%s", reason)
+        stop_event.set()
+
+    loop = asyncio.get_running_loop()
+    for sig, reason in ((signal.SIGTERM, "manual_stop"), (signal.SIGINT, "keyboard_interrupt")):
+        try:
+            loop.add_signal_handler(sig, lambda reason=reason: request_stop(reason))
+        except NotImplementedError:
+            pass
 
     session_candles: list = []
     futures_candles: list = []
@@ -82,6 +114,7 @@ async def main() -> None:
             result.playbook_decision.no_trade,
         )
         if result.playbook_decision.no_trade:
+            mtm_tracker.close_active_position(reason="no_trade_signal")
             return
 
         trade_id = f"paper-{candle.start.strftime('%Y%m%d-%H%M')}-{decision_counter}"
@@ -105,12 +138,26 @@ async def main() -> None:
             exit_price_or_prices=(),
             exit_reason="paper_eval_signal",
         )
+        mtm_tracker.activate_position(
+            trade_id=trade_id,
+            session_date=candle.start.strftime("%Y-%m-%d"),
+            playbook=result.playbook_decision.playbook_name,
+            structure=result.structure_proposal,
+            underlying_price=candle.close,
+            quantity=1,
+            as_of=decision.trading_day,
+        )
         summary_path = reporter.write_summary(session_file)
         logger.info("PAPER_EVAL_RECORDED | trade_id=%s summary=%s", trade_id, summary_path)
 
     async def handle_tick(tick) -> bool:
-        nonlocal tick_counter
+        nonlocal tick_counter, shutdown_reason
+        if stop_event.is_set():
+            logger.info("PAPER_EVAL_STOP | reason=%s ticks=%s decisions=%s", shutdown_reason, tick_counter, decision_counter)
+            return False
+
         tick_counter += 1
+        mtm_tracker.on_tick(tick)
         completed = market_data.handle_tick(tick)
         for candle in completed:
             if candle.interval_min != 1:
@@ -128,9 +175,11 @@ async def main() -> None:
                 futures_candles.append(candle)
 
         if max_ticks > 0 and tick_counter >= max_ticks:
+            shutdown_reason = "max_ticks_reached"
             logger.info("PAPER_EVAL_STOP | reason=max_ticks_reached ticks=%s", tick_counter)
             return False
         if max_decisions > 0 and decision_counter >= max_decisions:
+            shutdown_reason = "max_decisions_reached"
             logger.info("PAPER_EVAL_STOP | reason=max_decisions_reached decisions=%s", decision_counter)
             return False
         return True
@@ -140,6 +189,7 @@ async def main() -> None:
         handle_tick,
         item_name="paper_eval_tick",
     )
+    mtm_tracker.close_active_position(reason=shutdown_reason)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,19 @@ The rebuild should proceed in this order:
 
 ## Current Status
 
-This workspace has intentionally been reduced to a minimal starting point.
+This rebuild has now moved beyond the minimal starting point and is running as a working evaluation stack.
+
+### Progress Snapshot — 2026-04-06
+
+- ✅ market-calendar and runtime lifecycle foundation is in place
+- ✅ websocket-driven evaluation runtime is working during valid NSE trading sessions
+- ✅ monitoring UI at `https://nifty.nsrk.in/` is live and now mode-neutral
+- ✅ automatic holiday/weekend-aware supervisor is enabled via `nifty-auto-paper.service`
+- ✅ monitor UI can stay running independently via `nifty-monitor.service`
+- ✅ manual operational commands are documented in [`commands.md`](/home/ubuntu/nifty/commands.md)
+
+### Immediate Next Step
+
+Add **trade timing controls** so the system can keep running through the session, while allowing new entries only inside a configured intraday entry window.
 
 The old system is preserved in [archive](/home/ubuntu/nifty/archive), but it should be treated as reference material only, not as the template for the new design.

@@ -1,0 +1,17 @@
+[Unit]
+Description=NIFTY Trading Monitor Web UI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/nifty
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /home/ubuntu/nifty/monitoring_web.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -18,6 +18,7 @@ class MarketInstrument:
     expiry: str = ""
     strike: float = 0.0
     option_type: str = ""
+    lot_size: int = 1
 
 
 @dataclass(frozen=True)

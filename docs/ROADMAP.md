@@ -1,5 +1,12 @@
 # Roadmap
 
+## Current Operational Milestone — 2026-04-06
+
+- state-driven runtime, reporting, and monitor are now operational
+- market-hours automation is enabled with holiday/weekend-aware start and stop behavior
+- the UI has been simplified so the execution mode is shown separately from the trading logic
+- the next implementation step is **trade timing**, meaning the runtime can stay live while new entries are only allowed between configured start and stop times within the session
+
 ## Phase 1: Design
 
 1. finalize the state map
