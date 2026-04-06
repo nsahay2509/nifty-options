@@ -142,6 +142,7 @@ class SessionFeatureEngine:
         )
         session_phase = self.classify_session_phase(market_timestamp)
 
+        session_open = session_candles[0].open if session_candles else (index_candle.open if index_candle else 0.0)
         snapshot = SessionSnapshot(
             timestamp=market_timestamp,
             index_candle=index_candle,
@@ -156,6 +157,13 @@ class SessionFeatureEngine:
                 "is_expiry_day": day_context.is_expiry_day,
                 "is_expiry_eve": day_context.is_expiry_eve,
                 "trading_day_tags": day_context.tags,
+                "session_open": session_open,
+                "current_price": index_candle.close if index_candle else 0.0,
+                "opening_range_width": (
+                    session_references.opening_range_high - session_references.opening_range_low
+                    if session_references is not None
+                    else 0.0
+                ),
             },
         )
         self.logger.info(
