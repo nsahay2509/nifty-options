@@ -51,6 +51,10 @@ class TradingConfig:
     execution_mode: ExecutionMode = ExecutionMode.PAPER
     live_trading_enabled: bool = False
     require_explicit_live_flag: bool = True
+    # Consecutive 1-minute assessments required before entering/exiting on a state.
+    # Current behavior clamps values below 1 up to 1, so 0 behaves the same as 1.
+    entry_confirmations_required: int = 3
+    exit_confirmations_required: int = 3
 
 
 @dataclass(frozen=True)

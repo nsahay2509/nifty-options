@@ -6,6 +6,7 @@ import asyncio
 import os
 import signal
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 if __package__ in {None, ""}:
@@ -33,6 +34,108 @@ else:
 
 
 logger = get_logger("run_paper_live_eval")
+
+
+@dataclass(frozen=True)
+class TradeStateGateDecision:
+    action: str
+    active_state: str = ""
+    candidate_state: str = ""
+    candidate_count: int = 0
+    opposite_count: int = 0
+    reason: str = ""
+
+
+class TradeStateGate:
+    """Debounces rapid state flips before opening or closing paper trades."""
+
+    def __init__(self, *, entry_confirmations_required: int = 3, exit_confirmations_required: int = 3) -> None:
+        self.entry_confirmations_required = max(int(entry_confirmations_required), 1)
+        self.exit_confirmations_required = max(int(exit_confirmations_required), 1)
+        self._active_state = ""
+        self._candidate_state = ""
+        self._candidate_count = 0
+        self._opposite_count = 0
+
+    def observe(self, *, state_name: str, no_trade: bool) -> TradeStateGateDecision:
+        observed_state = "NO_TRADE" if no_trade else str(state_name or "")
+
+        if observed_state == self._candidate_state and observed_state:
+            self._candidate_count += 1
+        else:
+            self._candidate_state = observed_state
+            self._candidate_count = 1 if observed_state else 0
+
+        if not self._active_state:
+            if not observed_state or observed_state == "NO_TRADE":
+                return TradeStateGateDecision(
+                    action="wait",
+                    active_state="",
+                    candidate_state=self._candidate_state,
+                    candidate_count=self._candidate_count,
+                    reason="waiting_for_tradeable_state_confirmation",
+                )
+            if self._candidate_count >= self.entry_confirmations_required:
+                self._active_state = observed_state
+                self._opposite_count = 0
+                return TradeStateGateDecision(
+                    action="enter",
+                    active_state=self._active_state,
+                    candidate_state=self._candidate_state,
+                    candidate_count=self._candidate_count,
+                    reason="entry_state_confirmed",
+                )
+            return TradeStateGateDecision(
+                action="wait",
+                active_state="",
+                candidate_state=self._candidate_state,
+                candidate_count=self._candidate_count,
+                reason="entry_confirmation_pending",
+            )
+
+        if observed_state == self._active_state:
+            self._opposite_count = 0
+            return TradeStateGateDecision(
+                action="hold",
+                active_state=self._active_state,
+                candidate_state=self._candidate_state,
+                candidate_count=self._candidate_count,
+                opposite_count=self._opposite_count,
+                reason="active_state_still_confirmed",
+            )
+
+        self._opposite_count += 1
+        if self._opposite_count < self.exit_confirmations_required:
+            return TradeStateGateDecision(
+                action="hold",
+                active_state=self._active_state,
+                candidate_state=self._candidate_state,
+                candidate_count=self._candidate_count,
+                opposite_count=self._opposite_count,
+                reason="exit_confirmation_pending",
+            )
+
+        previous_state = self._active_state
+        self._active_state = ""
+        self._opposite_count = 0
+
+        if observed_state and observed_state != "NO_TRADE" and self._candidate_count >= self.entry_confirmations_required:
+            self._active_state = observed_state
+            return TradeStateGateDecision(
+                action="switch",
+                active_state=self._active_state,
+                candidate_state=self._candidate_state,
+                candidate_count=self._candidate_count,
+                reason=f"confirmed_state_change:{previous_state}->{observed_state}",
+            )
+
+        return TradeStateGateDecision(
+            action="exit",
+            active_state="",
+            candidate_state=self._candidate_state,
+            candidate_count=self._candidate_count,
+            reason=f"confirmed_exit_from:{previous_state}",
+        )
 
 
 async def main() -> None:
@@ -76,7 +179,43 @@ async def main() -> None:
     feed = DhanMarketFeed(credentials)
     recorder = TradeRecorder()
     reporter = ReportingService()
-    mtm_tracker = PaperMtmTracker()
+    trading_session_date = decision.trading_day.isoformat()
+
+    def record_closed_trade(closed_trade: dict[str, object]) -> None:
+        trade_id = str(closed_trade.get("trade_id", "") or "")
+        if not trade_id:
+            return
+
+        legs = list(closed_trade.get("legs", [])) if isinstance(closed_trade.get("legs", []), list) else []
+        exit_prices = tuple(
+            float(leg.get("last_price", 0.0) or 0.0)
+            for leg in legs
+            if isinstance(leg, dict) and leg.get("last_price") is not None
+        )
+        target = recorder.finalize_trade_record(
+            trade_id=trade_id,
+            session_date=str(closed_trade.get("session_date", trading_session_date) or trading_session_date),
+            gross_pnl=float(closed_trade.get("realised_pnl", 0.0) or 0.0),
+            fees_and_costs=0.0,
+            exit_price_or_prices=exit_prices,
+            exit_reason=str(closed_trade.get("exit_reason", "") or ""),
+            closed_at=str(closed_trade.get("closed_at", "") or ""),
+            underlying_exit_price=float(closed_trade.get("underlying_price", 0.0) or 0.0),
+            exit_close_value=float(closed_trade.get("current_close_value", 0.0) or 0.0),
+            unrealised_pnl=0.0,
+            legs=legs,
+        )
+        if target is None:
+            return
+
+        summary_path = reporter.write_summary(target)
+        logger.info("PAPER_EVAL_CLOSE_RECORDED | trade_id=%s summary=%s", trade_id, summary_path)
+
+    mtm_tracker = PaperMtmTracker(session_date=trading_session_date, on_trade_closed=record_closed_trade)
+    state_gate = TradeStateGate(
+        entry_confirmations_required=APP_CONFIG.trading.entry_confirmations_required,
+        exit_confirmations_required=APP_CONFIG.trading.exit_confirmations_required,
+    )
     stop_event = asyncio.Event()
     shutdown_reason = "session_end"
 
@@ -113,11 +252,44 @@ async def main() -> None:
             result.structure_proposal.structure_type,
             result.playbook_decision.no_trade,
         )
-        if result.playbook_decision.no_trade:
-            mtm_tracker.close_active_position(reason="no_trade_signal")
+        gate_decision = state_gate.observe(
+            state_name=result.state_assessment.state_name,
+            no_trade=result.playbook_decision.no_trade,
+        )
+        logger.info(
+            "PAPER_EVAL_GATE | state=%s no_trade=%s action=%s active_state=%s candidate=%s candidate_count=%s opposite_count=%s reason=%s",
+            result.state_assessment.state_name,
+            result.playbook_decision.no_trade,
+            gate_decision.action,
+            gate_decision.active_state,
+            gate_decision.candidate_state,
+            gate_decision.candidate_count,
+            gate_decision.opposite_count,
+            gate_decision.reason,
+        )
+
+        if gate_decision.action == "wait":
             return
 
+        if gate_decision.action == "hold":
+            return
+
+        if gate_decision.action in {"exit", "switch"}:
+            mtm_tracker.close_active_position(reason=gate_decision.reason)
+            if gate_decision.action == "exit" or result.playbook_decision.no_trade:
+                return
+
         trade_id = f"paper-{candle.start.strftime('%Y%m%d-%H%M')}-{decision_counter}"
+        snapshot = mtm_tracker.activate_position(
+            trade_id=trade_id,
+            session_date=candle.start.strftime("%Y-%m-%d"),
+            playbook=result.playbook_decision.playbook_name,
+            structure=result.structure_proposal,
+            underlying_price=candle.close,
+            quantity=1,
+            as_of=decision.trading_day,
+        )
+
         record = recorder.build_trade_record(
             trade_id=trade_id,
             state_at_entry=result.state_assessment.state_name,
@@ -137,15 +309,15 @@ async def main() -> None:
             entry_price_or_prices=(result.structure_proposal.estimated_premium,),
             exit_price_or_prices=(),
             exit_reason="paper_eval_signal",
-        )
-        mtm_tracker.activate_position(
-            trade_id=trade_id,
-            session_date=candle.start.strftime("%Y-%m-%d"),
-            playbook=result.playbook_decision.playbook_name,
-            structure=result.structure_proposal,
-            underlying_price=candle.close,
-            quantity=1,
-            as_of=decision.trading_day,
+            status="OPEN",
+            opened_at=candle.end.isoformat(),
+            entry_reason=result.playbook_decision.reason,
+            entry_credit=float(snapshot.get("entry_credit", 0.0) or 0.0),
+            entry_debit=float(snapshot.get("entry_debit", 0.0) or 0.0),
+            exit_close_value=float(snapshot.get("current_close_value", 0.0) or 0.0),
+            realised_pnl=0.0,
+            unrealised_pnl=float(snapshot.get("unrealised_pnl", 0.0) or 0.0),
+            legs=list(snapshot.get("legs", [])) if isinstance(snapshot.get("legs", []), list) else [],
         )
         summary_path = reporter.write_summary(session_file)
         logger.info("PAPER_EVAL_RECORDED | trade_id=%s summary=%s", trade_id, summary_path)

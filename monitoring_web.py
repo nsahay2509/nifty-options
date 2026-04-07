@@ -18,6 +18,7 @@ DEFAULT_DATA_DIR = DATA_DIR
 DEFAULT_HOST = os.getenv("MONITOR_HOST", "127.0.0.1")
 DEFAULT_PORT = int(os.getenv("MONITOR_PORT", "8010"))
 FRESHNESS_SEC = int(os.getenv("MONITOR_FRESHNESS_SEC", "180"))
+FAVICON_PATH = BASE_DIR / "static" / "favicon.ico"
 
 
 def load_json(path: Path, default):
@@ -367,6 +368,8 @@ def render_index() -> str:
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <title>NIFTY Trading Monitor</title>
+  <link rel=\"icon\" href=\"/favicon.ico\" />
+  <link rel=\"shortcut icon\" href=\"/favicon.ico\" />
   <style>
     :root {
       --bg: #f4f1e8;
@@ -611,6 +614,18 @@ def render_index() -> str:
 class MonitoringHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {"/favicon.ico", "/static/favicon.ico"}:
+            if FAVICON_PATH.exists():
+                body = FAVICON_PATH.read_bytes()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "image/x-icon")
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self.send_error(HTTPStatus.NOT_FOUND, "Favicon not found")
+            return
         if parsed.path == "/api/dashboard":
             self._send_json(build_dashboard_payload())
             return

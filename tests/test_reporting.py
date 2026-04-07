@@ -82,3 +82,48 @@ def test_reporting_service_writes_json_summary_file(tmp_path: Path) -> None:
 
     assert summary_path.exists()
     assert summary_path.name == "trade_summary_2026-04-06.json"
+
+
+def test_trade_recorder_finalize_updates_csv_and_summary(tmp_path: Path) -> None:
+    recorder = TradeRecorder(base_dir=tmp_path)
+    record = recorder.build_trade_record(
+        trade_id="trade-003",
+        state_at_entry="Expiry Gamma Expansion",
+        playbook="expiry_directional_scalp",
+        structure=StructureProposal(
+            structure_type="expiry_directional_scalp",
+            expiry="same_day",
+            strikes=(22950.0, 23000.0),
+            estimated_premium=70.0,
+        ),
+        gross_pnl=0.0,
+        fees_and_costs=0.0,
+    )
+    target = recorder.append_trade_record(
+        record,
+        session_date="2026-04-07",
+        underlying_context={"underlying_price": 22975.0},
+        expiry="same_day",
+        strikes=(22950.0, 23000.0),
+        side="PAPER",
+        quantity=1,
+        entry_price_or_prices=(70.0,),
+        exit_price_or_prices=(),
+        exit_reason="paper_eval_signal",
+    )
+
+    updated = recorder.finalize_trade_record(
+        trade_id="trade-003",
+        session_date="2026-04-07",
+        gross_pnl=320.0,
+        fees_and_costs=20.0,
+        exit_price_or_prices=(74.9,),
+        exit_reason="structure_change",
+    )
+
+    assert updated == target
+
+    summary = ReportingService().summarize_trade_file(target)
+    assert summary["gross_pnl"] == 320.0
+    assert summary["fees_and_costs"] == 20.0
+    assert summary["net_pnl"] == 300.0

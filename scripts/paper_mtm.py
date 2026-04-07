@@ -17,6 +17,7 @@ from scripts.schema import MarketInstrument, MarketTick, StructureProposal
 logger = get_logger("paper_mtm")
 
 InstrumentLookup = Callable[..., MarketInstrument]
+TradeCloseHandler = Callable[[dict[str, object]], None]
 
 
 @dataclass
@@ -70,11 +71,15 @@ class PaperMtmTracker:
         *,
         output_file: Path | None = None,
         instrument_lookup: InstrumentLookup | None = None,
+        session_date: str | None = None,
+        on_trade_closed: TradeCloseHandler | None = None,
     ) -> None:
         self.output_file = output_file or (DATA_DIR / "reports" / "live_paper_mtm.json")
         self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.instrument_lookup = instrument_lookup or resolve_nifty_option
         self.logger = logger
+        self._session_date = session_date or date.today().isoformat()
+        self._on_trade_closed = on_trade_closed
         self._latest_prices: dict[str, float] = {}
         self._active: dict[str, object] | None = None
         self._realised_pnl_today = 0.0
@@ -157,11 +162,17 @@ class PaperMtmTracker:
         realised = round(float(self._active.get("unrealised_pnl", 0.0) or 0.0), 2)
         closed_trade = {
             "trade_id": str(self._active.get("trade_id", "")),
+            "session_date": str(self._active.get("session_date", self._session_date)),
             "playbook": str(self._active.get("playbook", "")),
             "structure_type": str(self._active.get("structure_type", "")),
             "exit_reason": reason,
             "closed_at": closed_ts,
             "mtm_points": round(float(self._active.get("mtm_points", 0.0) or 0.0), 2),
+            "entry_credit": round(float(self._active.get("entry_credit", 0.0) or 0.0), 2),
+            "entry_debit": round(float(self._active.get("entry_debit", 0.0) or 0.0), 2),
+            "current_close_value": round(float(self._active.get("current_close_value", 0.0) or 0.0), 2),
+            "underlying_price": float(self._active.get("underlying_price", 0.0) or 0.0),
+            "legs": [leg.to_dict() for leg in self._active.get("legs", []) if isinstance(leg, PaperLeg)],
             "realised_pnl": realised,
         }
         self._realised_pnl_today += realised
@@ -178,6 +189,11 @@ class PaperMtmTracker:
         )
         self._active = None
         self._write_snapshot(self.snapshot())
+        if self._on_trade_closed is not None:
+            try:
+                self._on_trade_closed(dict(closed_trade))
+            except Exception as exc:
+                self.logger.warning("PAPER_MTM_CLOSE_CALLBACK_FAILED | trade_id=%s reason=%s", closed_trade["trade_id"], exc)
         return self.snapshot()
 
     def on_tick(self, tick: MarketTick) -> None:
@@ -217,6 +233,8 @@ class PaperMtmTracker:
                 "mode": "waiting_for_trade",
                 "reason": self._flat_reason,
                 "trade_id": "",
+                "last_signal_id": "",
+                "session_date": self._session_date,
                 "playbook": "",
                 "structure_type": "",
                 "expiry": "",
@@ -369,11 +387,45 @@ class PaperMtmTracker:
             payload = json.loads(self.output_file.read_text(encoding="utf-8"))
         except Exception:
             return
+
+        payload_session_date = self._extract_payload_session_date(payload)
+        self._flat_reason = str(payload.get("reason", self._flat_reason))
+        self._last_update_iso = str(payload.get("last_update", self._last_update_iso))
+
+        if payload_session_date and payload_session_date != self._session_date:
+            self.logger.info(
+                "PAPER_MTM_SESSION_RESET | previous_session=%s current_session=%s",
+                payload_session_date,
+                self._session_date,
+            )
+            self._flat_reason = "No active paper position yet."
+            self._recent_closed = []
+            self._realised_pnl_today = 0.0
+            self._closed_trade_count = 0
+            return
+
         self._realised_pnl_today = float(payload.get("realised_pnl_today", 0.0) or 0.0)
         self._closed_trade_count = int(payload.get("closed_trade_count", 0) or 0)
         self._recent_closed = list(payload.get("recent_closed", []))[:10]
-        self._flat_reason = str(payload.get("reason", self._flat_reason))
-        self._last_update_iso = str(payload.get("last_update", self._last_update_iso))
+
+    def _extract_payload_session_date(self, payload: dict[str, object]) -> str:
+        session_date = str(payload.get("session_date", "") or "")
+        if session_date:
+            return session_date
+
+        recent_closed = payload.get("recent_closed", [])
+        if isinstance(recent_closed, list):
+            for item in recent_closed:
+                if not isinstance(item, dict):
+                    continue
+                closed_at = str(item.get("closed_at", "") or "")
+                if len(closed_at) >= 10:
+                    return closed_at[:10]
+
+        last_update = str(payload.get("last_update", "") or "")
+        if len(last_update) >= 10:
+            return last_update[:10]
+        return ""
 
     def _write_snapshot(self, payload: dict[str, object]) -> None:
         with self.output_file.open("w", encoding="utf-8") as fh:

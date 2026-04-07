@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -132,3 +133,28 @@ def test_paper_mtm_tracker_books_realised_pnl_when_closed(tmp_path: Path) -> Non
     assert snapshot["realised_pnl_today"] == 350.0
     assert snapshot["closed_trade_count"] == 1
     assert snapshot["recent_closed"][0]["exit_reason"] == "signal_flip"
+
+
+def test_paper_mtm_tracker_resets_realised_pnl_on_new_session(tmp_path: Path) -> None:
+    output_file = tmp_path / "live_paper_mtm.json"
+    output_file.write_text(
+        json.dumps(
+            {
+                "session_date": "2026-04-06",
+                "realised_pnl_today": -679.25,
+                "closed_trade_count": 6,
+                "recent_closed": [{"trade_id": "paper-20260406-1511-15", "realised_pnl": -172.25}],
+                "reason": "Last paper trade was closed: no_trade_signal.",
+                "last_update": "2026-04-06T15:18:00+05:30",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    tracker = PaperMtmTracker(output_file=output_file, session_date="2026-04-07")
+    snapshot = tracker.snapshot()
+
+    assert snapshot["session_date"] == "2026-04-07"
+    assert snapshot["realised_pnl_today"] == 0.0
+    assert snapshot["closed_trade_count"] == 0
+    assert snapshot["recent_closed"] == []

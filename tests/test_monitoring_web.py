@@ -4,7 +4,14 @@ import csv
 import json
 from pathlib import Path
 
-from monitoring_web import build_dashboard_payload
+from monitoring_web import build_dashboard_payload, render_index
+
+
+def test_render_index_includes_favicon_reference() -> None:
+    html = render_index()
+
+    assert 'rel="icon"' in html
+    assert 'favicon.ico' in html
 
 
 def test_build_dashboard_payload_reads_latest_summary_and_records(tmp_path: Path) -> None:
