@@ -52,6 +52,24 @@ TRADE_RECORD_FIELDNAMES = [
     "legs_json",
     "exit_reason",
 ]
+LEGACY_TRADE_RECORD_FIELDNAMES = [
+    "trade_id",
+    "state_at_entry",
+    "playbook",
+    "structure_type",
+    "gross_pnl",
+    "fees_and_costs",
+    "net_pnl",
+    "session_date",
+    "underlying_context",
+    "expiry",
+    "strike_or_strikes",
+    "side",
+    "quantity",
+    "entry_price_or_prices",
+    "exit_price_or_prices",
+    "exit_reason",
+]
 
 
 class TradeRecorder:
@@ -116,6 +134,9 @@ class TradeRecorder:
             opened_at=opened_at,
             closed_at=closed_at,
         )
+
+        if target.exists():
+            self._normalize_file_if_needed(target)
 
         payload = self._ensure_schema(
             {
@@ -260,6 +281,7 @@ class TradeRecorder:
         return target
 
     def _ensure_schema(self, row: dict[str, Any]) -> dict[str, str]:
+        row = self._repair_misaligned_row(dict(row))
         payload = {field: self._stringify_value(row.get(field, "")) for field in TRADE_RECORD_FIELDNAMES}
 
         payload["underlying_context"] = self._stringify_json(row.get("underlying_context", {}), default={})
@@ -337,6 +359,47 @@ class TradeRecorder:
             payload["trade_bias"] = self._infer_trade_bias(payload["playbook"], payload["structure_type"], normalised_legs)
 
         return payload
+
+    def _normalize_file_if_needed(self, target: Path) -> None:
+        try:
+            with target.open(encoding="utf-8", newline="") as fh:
+                header = fh.readline().strip()
+        except Exception:
+            return
+
+        expected_header = ",".join(TRADE_RECORD_FIELDNAMES)
+        if header == expected_header:
+            return
+
+        with target.open(encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh)
+            rows = [self._ensure_schema(dict(row)) for row in reader]
+
+        with target.open("w", encoding="utf-8", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=TRADE_RECORD_FIELDNAMES)
+            writer.writeheader()
+            writer.writerows(rows)
+
+        self.logger.info("TRADE_FILE_NORMALIZED | path=%s rows=%s", target, len(rows))
+
+    @staticmethod
+    def _repair_misaligned_row(row: dict[str, Any]) -> dict[str, Any]:
+        extras = row.get(None)
+        if not isinstance(extras, list) or not extras:
+            row.pop(None, None)
+            return row
+
+        ordered_keys = [key for key in row.keys() if key is not None]
+        values = [row.get(key, "") for key in ordered_keys] + list(extras)
+
+        if len(values) == len(TRADE_RECORD_FIELDNAMES):
+            return {field: values[index] for index, field in enumerate(TRADE_RECORD_FIELDNAMES)}
+
+        if len(values) == len(LEGACY_TRADE_RECORD_FIELDNAMES):
+            return {field: values[index] for index, field in enumerate(LEGACY_TRADE_RECORD_FIELDNAMES)}
+
+        row.pop(None, None)
+        return row
 
     def _normalise_legs(
         self,

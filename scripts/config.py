@@ -53,7 +53,7 @@ class TradingConfig:
     require_explicit_live_flag: bool = True
     # Consecutive 1-minute assessments required before entering/exiting on a state.
     # Current behavior clamps values below 1 up to 1, so 0 behaves the same as 1.
-    entry_confirmations_required: int = 3
+    entry_confirmations_required: int = 1
     exit_confirmations_required: int = 3
 
 
@@ -79,7 +79,7 @@ class InstrumentConfig:
 class MarketDataConfig:
     tick_store_dir: Path = MARKET_DATA_DIR / "ticks"
     candle_store_dir: Path = MARKET_DATA_DIR / "candles"
-    base_feed_mode: MarketFeedMode = MarketFeedMode.QUOTE
+    base_feed_mode: MarketFeedMode = MarketFeedMode.FULL
     candle_interval_sec: int = 60
     derive_intervals_min: tuple[int, ...] = (1, 5, 15)
     use_index_for_structure: bool = True

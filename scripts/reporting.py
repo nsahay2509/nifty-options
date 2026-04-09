@@ -38,11 +38,11 @@ class ReportingService:
         }
 
         for row in rows:
-            gross = float(row.get("gross_pnl", 0.0) or 0.0)
-            costs = float(row.get("fees_and_costs", 0.0) or 0.0)
-            net = float(row.get("net_pnl", 0.0) or 0.0)
-            state = row.get("state_at_entry", "")
-            playbook = row.get("playbook", "")
+            gross = self._safe_float(row.get("gross_pnl", 0.0))
+            costs = self._safe_float(row.get("fees_and_costs", 0.0))
+            net = self._safe_float(row.get("net_pnl", 0.0))
+            state = str(row.get("state_at_entry", "") or "")
+            playbook = str(row.get("playbook", "") or "")
 
             summary["gross_pnl"] += gross
             summary["fees_and_costs"] += costs
@@ -75,6 +75,13 @@ class ReportingService:
             return rows[0].get("session_date", "")
         stem = trade_file.stem.replace("trade_records_", "")
         return stem
+
+    @staticmethod
+    def _safe_float(value: Any) -> float:
+        try:
+            return float(value or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
 
     @staticmethod
     def _update_bucket(bucket: dict[str, dict[str, float]], key: str, gross: float, costs: float, net: float) -> None:

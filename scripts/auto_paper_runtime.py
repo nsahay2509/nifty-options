@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import os
 import signal
 import sys
@@ -86,8 +87,20 @@ async def supervise_forever(
                 decision.trading_day.isoformat(),
                 decision.session_close.isoformat(),
             )
+            runner_kwargs: dict[str, object] = {}
             try:
-                await runner()
+                runner_signature = inspect.signature(runner)
+            except (TypeError, ValueError):
+                runner_signature = None
+
+            if runner_signature is not None:
+                if "stop_event" in runner_signature.parameters:
+                    runner_kwargs["stop_event"] = stop_event
+                if "install_signal_handlers" in runner_signature.parameters:
+                    runner_kwargs["install_signal_handlers"] = False
+
+            try:
+                await runner(**runner_kwargs)
             except Exception:
                 logger.exception("AUTO_RUNTIME_SESSION_ERROR | trading_day=%s", decision.trading_day.isoformat())
                 await _sleep_or_stop(stop_event, restart_delay_seconds)

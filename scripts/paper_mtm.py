@@ -90,6 +90,14 @@ class PaperMtmTracker:
         self._restore_summary_state()
         self._write_snapshot(self.snapshot())
 
+    def _reset_for_session(self, session_date: str, *, reason: str = "No active paper position yet.") -> None:
+        self._session_date = session_date or self._session_date
+        self._active = None
+        self._recent_closed = []
+        self._realised_pnl_today = 0.0
+        self._closed_trade_count = 0
+        self._flat_reason = reason
+
     def activate_position(
         self,
         *,
@@ -102,6 +110,14 @@ class PaperMtmTracker:
         as_of: date | None = None,
     ) -> dict[str, object]:
         as_of_date = as_of or date.today()
+        if session_date and session_date != self._session_date:
+            self.logger.info(
+                "PAPER_MTM_SESSION_ROLLOVER | previous_session=%s current_session=%s",
+                self._session_date,
+                session_date,
+            )
+            self._reset_for_session(session_date)
+
         signature = (playbook, structure.structure_type, structure.expiry, tuple(structure.strikes))
 
         if self._active and self._active.get("signature") == signature:
@@ -196,8 +212,23 @@ class PaperMtmTracker:
                 self.logger.warning("PAPER_MTM_CLOSE_CALLBACK_FAILED | trade_id=%s reason=%s", closed_trade["trade_id"], exc)
         return self.snapshot()
 
+    def preserve_active_position(self, *, reason: str) -> dict[str, object]:
+        """Persist the current in-session paper state without forcing a close."""
+        if not self._active:
+            return self.snapshot()
+
+        self._active["reason"] = reason
+        self._write_snapshot(self.snapshot())
+        self.logger.info(
+            "PAPER_MTM_PRESERVE | trade_id=%s reason=%s",
+            self._active.get("trade_id", ""),
+            reason,
+        )
+        return self.snapshot()
+
     def on_tick(self, tick: MarketTick) -> None:
-        self._latest_prices[tick.instrument.security_id] = tick.ltp
+        mark_price = self._mark_price(tick)
+        self._latest_prices[tick.instrument.security_id] = mark_price
         self._last_update_iso = tick.timestamp.isoformat()
         if not self._active:
             return
@@ -214,8 +245,8 @@ class PaperMtmTracker:
             if leg.instrument.security_id != tick.instrument.security_id:
                 continue
             if leg.entry_price is None:
-                leg.entry_price = tick.ltp
-            leg.last_price = tick.ltp
+                leg.entry_price = mark_price
+            leg.last_price = mark_price
             touched = True
             option_leg_touched = True
 
@@ -225,6 +256,14 @@ class PaperMtmTracker:
                 self._recompute_snapshot()
             else:
                 self._write_snapshot(self.snapshot())
+
+    def _mark_price(self, tick: MarketTick) -> float:
+        if tick.instrument.instrument_type == "OPTION":
+            bid = float(tick.best_bid_price or 0.0)
+            ask = float(tick.best_ask_price or 0.0)
+            if bid > 0 and ask > 0:
+                return (bid + ask) / 2.0
+        return float(tick.ltp)
 
     def snapshot(self) -> dict[str, object]:
         if not self._active:
@@ -398,15 +437,92 @@ class PaperMtmTracker:
                 payload_session_date,
                 self._session_date,
             )
-            self._flat_reason = "No active paper position yet."
-            self._recent_closed = []
-            self._realised_pnl_today = 0.0
-            self._closed_trade_count = 0
+            self._reset_for_session(self._session_date)
             return
 
         self._realised_pnl_today = float(payload.get("realised_pnl_today", 0.0) or 0.0)
         self._closed_trade_count = int(payload.get("closed_trade_count", 0) or 0)
         self._recent_closed = list(payload.get("recent_closed", []))[:10]
+        self._restore_active_state(payload)
+
+    def _restore_active_state(self, payload: dict[str, object]) -> None:
+        if not bool(payload.get("live", False)):
+            return
+
+        payload_session_date = str(payload.get("session_date", "") or "")
+        if payload_session_date != self._session_date:
+            return
+
+        legs_payload = payload.get("legs", [])
+        if not isinstance(legs_payload, list) or not legs_payload:
+            return
+
+        restored_legs: list[PaperLeg] = []
+        expiry_hint = str(payload.get("expiry", "") or "same_week")
+        as_of = datetime.strptime(self._session_date, "%Y-%m-%d").date()
+
+        for leg_payload in legs_payload:
+            if not isinstance(leg_payload, dict):
+                return
+            try:
+                instrument = self.instrument_lookup(
+                    strike=float(leg_payload.get("strike", 0.0) or 0.0),
+                    option_type=str(leg_payload.get("option_type", "") or ""),
+                    expiry_hint=expiry_hint,
+                    as_of=as_of,
+                )
+            except Exception:
+                return
+
+            entry_price = leg_payload.get("entry_price")
+            last_price = leg_payload.get("last_price")
+            restored_leg = PaperLeg(
+                instrument=instrument,
+                side=str(leg_payload.get("side", "") or ""),
+                quantity=int(leg_payload.get("quantity", 1) or 1),
+                entry_price=float(entry_price) if entry_price is not None else None,
+                last_price=float(last_price) if last_price is not None else None,
+            )
+            if restored_leg.entry_price is not None:
+                self._latest_prices[instrument.security_id] = restored_leg.entry_price
+            if restored_leg.last_price is not None:
+                self._latest_prices[instrument.security_id] = restored_leg.last_price
+            restored_legs.append(restored_leg)
+
+        strikes = [float(leg.instrument.strike) for leg in restored_legs]
+        self._active = {
+            "signature": (
+                str(payload.get("playbook", "") or ""),
+                str(payload.get("structure_type", "") or ""),
+                expiry_hint,
+                tuple(strikes),
+            ),
+            "trade_id": str(payload.get("trade_id", "") or ""),
+            "last_signal_id": str(payload.get("last_signal_id", "") or payload.get("trade_id", "") or ""),
+            "session_date": payload_session_date,
+            "playbook": str(payload.get("playbook", "") or ""),
+            "structure_type": str(payload.get("structure_type", "") or ""),
+            "expiry": expiry_hint,
+            "strikes": strikes,
+            "underlying_price": float(payload.get("underlying_price", 0.0) or 0.0),
+            "estimated_premium": 0.0,
+            "entry_credit": float(payload.get("entry_credit", 0.0) or 0.0),
+            "entry_debit": float(payload.get("entry_debit", 0.0) or 0.0),
+            "current_close_value": float(payload.get("current_close_value", 0.0) or 0.0),
+            "mtm_points": float(payload.get("mtm_points", 0.0) or 0.0),
+            "unrealised_pnl": float(payload.get("unrealised_pnl", 0.0) or 0.0),
+            "live": True,
+            "mode": str(payload.get("mode", "live_mtm") or "live_mtm"),
+            "reason": str(payload.get("reason", "Active paper trade restored after restart.") or "Active paper trade restored after restart."),
+            "last_update": str(payload.get("last_update", self._last_update_iso) or self._last_update_iso),
+            "legs": restored_legs,
+        }
+        self.logger.info(
+            "PAPER_MTM_RESTORED | trade_id=%s session_date=%s playbook=%s",
+            self._active.get("trade_id", ""),
+            payload_session_date,
+            self._active.get("playbook", ""),
+        )
 
     def _extract_payload_session_date(self, payload: dict[str, object]) -> str:
         session_date = str(payload.get("session_date", "") or "")

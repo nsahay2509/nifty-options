@@ -22,6 +22,7 @@ Build a state-driven NIFTY options framework that answers five questions in orde
 - [docs/DATA_MODEL.md](/home/ubuntu/nifty/docs/DATA_MODEL.md): minimum inputs required for state and playbook decisions
 - [docs/ARCHITECTURE.md](/home/ubuntu/nifty/docs/ARCHITECTURE.md): module ownership and runtime shape
 - [docs/ROADMAP.md](/home/ubuntu/nifty/docs/ROADMAP.md): staged build plan
+- [docs/PROGRESS_LOG.md](/home/ubuntu/nifty/docs/PROGRESS_LOG.md): dated progress, rationale, and result log
 - [scripts](/home/ubuntu/nifty/scripts): canonical home for the rebuilt runtime code
 - [archive](/home/ubuntu/nifty/archive): preserved old experiment
 

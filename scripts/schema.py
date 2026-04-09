@@ -39,6 +39,10 @@ class MarketTick:
     day_high: float = 0.0
     day_low: float = 0.0
     prev_close: float = 0.0
+    best_bid_price: float = 0.0
+    best_ask_price: float = 0.0
+    best_bid_quantity: int = 0
+    best_ask_quantity: int = 0
     raw: dict[str, Any] = field(default_factory=dict)
 
 

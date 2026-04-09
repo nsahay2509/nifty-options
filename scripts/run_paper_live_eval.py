@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import asyncio
+import csv
+import json
 import os
 import signal
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from scripts.config import APP_CONFIG
+from scripts.config import APP_CONFIG, DATA_DIR
 from scripts.instrument_resolver import resolve_base_instruments
 from scripts.log import configure_logging, get_logger
 from scripts.market_calendar import MarketCalendar
@@ -138,7 +141,114 @@ class TradeStateGate:
         )
 
 
-async def main() -> None:
+def _expected_option_expiry_hint(as_of: date) -> str:
+    calendar = MarketCalendar()
+    try:
+        days_to_expiry = max((calendar.next_expiry(as_of) - as_of).days, 0)
+    except Exception:
+        days_to_expiry = 0
+    return "same_week" if days_to_expiry <= 3 else "next_week"
+
+
+def _load_recent_underlying_price(*, session_date: date) -> float:
+    live_mtm_file = DATA_DIR / "reports" / "live_paper_mtm.json"
+    if live_mtm_file.exists():
+        try:
+            payload = json.loads(live_mtm_file.read_text(encoding="utf-8"))
+        except Exception:
+            payload = {}
+        if str(payload.get("session_date", "")) == session_date.isoformat():
+            try:
+                underlying = float(payload.get("underlying_price", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                underlying = 0.0
+            if underlying > 0:
+                return underlying
+
+    recent_record_files = [DATA_DIR / "records" / f"trade_records_{session_date.isoformat()}.csv"]
+    records_dir = DATA_DIR / "records"
+    if records_dir.exists():
+        historical_files = sorted(records_dir.glob("trade_records_*.csv"), reverse=True)
+        for candidate in historical_files:
+            if candidate not in recent_record_files:
+                recent_record_files.append(candidate)
+
+    for records_file in recent_record_files:
+        if not records_file.exists():
+            continue
+        try:
+            with records_file.open(encoding="utf-8", newline="") as fh:
+                rows = list(csv.DictReader(fh))
+        except Exception:
+            rows = []
+        for row in reversed(rows):
+            try:
+                context = json.loads(row.get("underlying_context", "") or "{}")
+            except Exception:
+                context = {}
+            if not isinstance(context, dict):
+                continue
+            try:
+                underlying = float(context.get("underlying_price", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                underlying = 0.0
+            if underlying > 0:
+                return underlying
+
+    return 0.0
+
+
+def build_option_subscription_basket(
+    *,
+    center_price: float,
+    as_of: date,
+    prior_day_candles: list | None = None,
+) -> list:
+    """Subscribe to a focused option basket around the expected active expiry so live paper P&L can mark the current legs without overloading the feed."""
+    if center_price <= 0:
+        return []
+
+    breadth_steps = 10
+    expiry_hint = _expected_option_expiry_hint(as_of)
+    fallback_hints = [expiry_hint]
+    if expiry_hint != "same_week":
+        fallback_hints.append("same_week")
+
+    instruments = []
+    seen: set[str] = set()
+
+    for hint in fallback_hints:
+        try:
+            basket = resolve_nifty_option_basket(
+                center_price=center_price,
+                expiry_hint=hint,
+                as_of=as_of,
+                breadth_steps=breadth_steps,
+            )
+        except Exception as exc:
+            logger.warning("PAPER_EVAL_OPTION_BASKET_SKIP | expiry_hint=%s reason=%s", hint, exc)
+            continue
+
+        for instrument in basket:
+            if instrument.security_id in seen:
+                continue
+            seen.add(instrument.security_id)
+            instruments.append(instrument)
+
+        if instruments:
+            logger.info(
+                "PAPER_EVAL_OPTION_SUBSCRIPTIONS | center_price=%s expiry_hint=%s breadth_steps=%s option_count=%s",
+                center_price,
+                hint,
+                breadth_steps,
+                len(instruments),
+            )
+            break
+
+    return instruments
+
+
+async def main(*, stop_event: asyncio.Event | None = None, install_signal_handlers: bool = True) -> None:
     configure_logging(log_file=APP_CONFIG.logging.file)
 
     if APP_CONFIG.trading.execution_mode.value != "paper" or APP_CONFIG.trading.live_trading_enabled:
@@ -155,17 +265,16 @@ async def main() -> None:
     credentials = load_dhan_credentials()
     resolved = resolve_base_instruments(as_of=decision.trading_day)
     prior_day_candles = load_prior_day_index_candles(decision.trading_day, calendar=calendar)
-    option_anchor = prior_day_candles[-1].close if prior_day_candles else 23000.0
-    try:
-        option_instruments = resolve_nifty_option_basket(
-            center_price=option_anchor,
-            expiry_hint="same_week",
-            as_of=decision.trading_day,
-            breadth_steps=12,
-        )
-    except Exception as exc:
-        logger.warning("PAPER_EVAL_OPTION_BASKET_SKIP | reason=%s", exc)
-        option_instruments = []
+    option_anchor = _load_recent_underlying_price(session_date=decision.trading_day)
+    if option_anchor <= 0 and prior_day_candles:
+        option_anchor = float(prior_day_candles[-1].close)
+    if option_anchor <= 0:
+        option_anchor = 23000.0
+    option_instruments = build_option_subscription_basket(
+        center_price=option_anchor,
+        as_of=decision.trading_day,
+        prior_day_candles=prior_day_candles,
+    )
     instruments = [resolved.index, resolved.futures, *option_instruments]
 
     logger.info(
@@ -216,7 +325,7 @@ async def main() -> None:
         entry_confirmations_required=APP_CONFIG.trading.entry_confirmations_required,
         exit_confirmations_required=APP_CONFIG.trading.exit_confirmations_required,
     )
-    stop_event = asyncio.Event()
+    stop_event = stop_event or asyncio.Event()
     shutdown_reason = "session_end"
 
     def request_stop(reason: str) -> None:
@@ -227,12 +336,13 @@ async def main() -> None:
         logger.info("PAPER_EVAL_STOP_REQUESTED | reason=%s", reason)
         stop_event.set()
 
-    loop = asyncio.get_running_loop()
-    for sig, reason in ((signal.SIGTERM, "manual_stop"), (signal.SIGINT, "keyboard_interrupt")):
-        try:
-            loop.add_signal_handler(sig, lambda reason=reason: request_stop(reason))
-        except NotImplementedError:
-            pass
+    if install_signal_handlers:
+        loop = asyncio.get_running_loop()
+        for sig, reason in ((signal.SIGTERM, "manual_stop"), (signal.SIGINT, "keyboard_interrupt")):
+            try:
+                loop.add_signal_handler(sig, lambda reason=reason: request_stop(reason))
+            except NotImplementedError:
+                pass
 
     session_candles: list = []
     futures_candles: list = []
@@ -289,6 +399,16 @@ async def main() -> None:
             quantity=1,
             as_of=decision.trading_day,
         )
+
+        active_trade_id = str(snapshot.get("trade_id", "") or "")
+        if active_trade_id != trade_id:
+            logger.info(
+                "PAPER_EVAL_POSITION_REUSED | requested_trade_id=%s active_trade_id=%s playbook=%s",
+                trade_id,
+                active_trade_id,
+                result.playbook_decision.playbook_name,
+            )
+            return
 
         record = recorder.build_trade_record(
             trade_id=trade_id,
@@ -361,7 +481,11 @@ async def main() -> None:
         handle_tick,
         item_name="paper_eval_tick",
     )
-    mtm_tracker.close_active_position(reason=shutdown_reason)
+    post_run_decision = controller.evaluate()
+    if post_run_decision.should_run:
+        mtm_tracker.preserve_active_position(reason="Active paper trade preserved for in-session restart.")
+    else:
+        mtm_tracker.close_active_position(reason=shutdown_reason)
 
 
 if __name__ == "__main__":

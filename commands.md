@@ -52,3 +52,7 @@ python3 -m pytest tests/test_monitoring_web.py
 curl -s https://nifty.nsrk.in/health
 curl -s 'https://nifty.nsrk.in/api/dashboard?ts=1' | python3 -m json.tool | head -n 80
 ```
+
+
+sudo systemctl restart --no-block nifty-auto-paper.service
+sudo systemctl restart --no-block nifty-monitor.service

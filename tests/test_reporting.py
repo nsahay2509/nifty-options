@@ -127,3 +127,69 @@ def test_trade_recorder_finalize_updates_csv_and_summary(tmp_path: Path) -> None
     assert summary["gross_pnl"] == 320.0
     assert summary["fees_and_costs"] == 20.0
     assert summary["net_pnl"] == 300.0
+
+
+def test_reporting_service_handles_mixed_schema_trade_file(tmp_path: Path) -> None:
+    target = tmp_path / "trade_records_2026-04-08.csv"
+    target.write_text(
+        "trade_id,state_at_entry,playbook,structure_type,gross_pnl,fees_and_costs,net_pnl,session_date,underlying_context,expiry,strike_or_strikes,side,quantity,entry_price_or_prices,exit_price_or_prices,exit_reason\n"
+        "paper-legacy-1,Controlled Range,iron_condor,iron_condor,100.0,5.0,95.0,2026-04-08,\"{\"\"paper_mode\"\": true}\",same_week,\"[23800.0,23900.0]\",PAPER,1,\"[65.0]\",[],paper_eval_signal\n"
+        "paper-new-2,OPEN,2026-04-08T12:24:00+05:30,,,Controlled Range,call_or_put_credit_spread,call_or_put_credit_spread,BEARISH,state_playbook_fit:Controlled Range,0.0,0.0,0.0,0.0,0.0,2026-04-08,\"{\"\"paper_mode\"\": true, \"\"underlying_price\"\": 23968.65}\",23968.65,,next_week,\"[23850.0, 23950.0]\",PAPER,1,\"[65.0]\",[],65.0,0.0,0.0,2,\"[\"\"PE\"\"]\",\"[\"\"NIFTY 26 MAY 23850 PUT\"\", \"\"NIFTY 26 MAY 23950 PUT\"\"]\",\"[{\"\"security_id\"\": \"\"72174\"\"}]\",paper_eval_signal\n",
+        encoding="utf-8",
+    )
+
+    summary = ReportingService().summarize_trade_file(target)
+
+    assert summary["total_trades"] == 2
+    assert summary["gross_pnl"] == 100.0
+    assert summary["fees_and_costs"] == 5.0
+    assert "Controlled Range" in summary["by_state"]
+
+
+def test_trade_recorder_append_normalizes_legacy_header_before_summary(tmp_path: Path) -> None:
+    target = tmp_path / "trade_records_2026-04-08.csv"
+    target.write_text(
+        "trade_id,state_at_entry,playbook,structure_type,gross_pnl,fees_and_costs,net_pnl,session_date,underlying_context,expiry,strike_or_strikes,side,quantity,entry_price_or_prices,exit_price_or_prices,exit_reason\n"
+        "paper-legacy-1,Controlled Range,iron_condor,iron_condor,100.0,5.0,95.0,2026-04-08,\"{\"\"paper_mode\"\": true}\",same_week,\"[23800.0,23900.0]\",PAPER,1,\"[65.0]\",[],paper_eval_signal\n",
+        encoding="utf-8",
+    )
+
+    recorder = TradeRecorder(base_dir=tmp_path)
+    record = recorder.build_trade_record(
+        trade_id="trade-004",
+        state_at_entry="Controlled Range",
+        playbook="call_or_put_credit_spread",
+        structure=StructureProposal(
+            structure_type="call_or_put_credit_spread",
+            expiry="next_week",
+            strikes=(23850.0, 23950.0),
+            estimated_premium=65.0,
+        ),
+        gross_pnl=0.0,
+        fees_and_costs=0.0,
+    )
+    recorder.append_trade_record(
+        record,
+        session_date="2026-04-08",
+        underlying_context={"paper_mode": True, "underlying_price": 23968.65},
+        expiry="next_week",
+        strikes=(23850.0, 23950.0),
+        side="PAPER",
+        quantity=1,
+        entry_price_or_prices=(65.0,),
+        exit_price_or_prices=(),
+        exit_reason="paper_eval_signal",
+        status="OPEN",
+        opened_at="2026-04-08T12:24:00+05:30",
+        entry_reason="state_playbook_fit:Controlled Range",
+        trade_bias="BEARISH",
+    )
+
+    summary = ReportingService().summarize_trade_file(target)
+    header = target.read_text(encoding="utf-8").splitlines()[0]
+
+    assert header.startswith("trade_id,status,opened_at,closed_at,holding_minutes")
+    assert summary["total_trades"] == 2
+    assert summary["gross_pnl"] == 100.0
+    assert summary["fees_and_costs"] == 5.0
+    assert summary["by_playbook"]["call_or_put_credit_spread"]["count"] == 1

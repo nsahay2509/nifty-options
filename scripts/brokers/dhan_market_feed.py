@@ -182,8 +182,18 @@ class DhanMarketFeed:
             total_buy_qty = struct.unpack("<I", payload[30:34])[0]
             open_interest = struct.unpack("<I", payload[34:38])[0]
             day_open = struct.unpack("<f", payload[46:50])[0]
+            prev_close = struct.unpack("<f", payload[50:54])[0]
             day_high = struct.unpack("<f", payload[54:58])[0]
             day_low = struct.unpack("<f", payload[58:62])[0]
+            best_bid_quantity = 0
+            best_ask_quantity = 0
+            best_bid_price = 0.0
+            best_ask_price = 0.0
+            if len(payload) >= 82:
+                best_bid_quantity = struct.unpack("<I", payload[62:66])[0]
+                best_ask_quantity = struct.unpack("<I", payload[66:70])[0]
+                best_bid_price = struct.unpack("<f", payload[74:78])[0]
+                best_ask_price = struct.unpack("<f", payload[78:82])[0]
             return MarketTick(
                 instrument=instrument,
                 timestamp=self._decode_timestamp(ltt_epoch),
@@ -198,6 +208,11 @@ class DhanMarketFeed:
                 day_open=day_open,
                 day_high=day_high,
                 day_low=day_low,
+                prev_close=prev_close,
+                best_bid_price=best_bid_price,
+                best_ask_price=best_ask_price,
+                best_bid_quantity=best_bid_quantity,
+                best_ask_quantity=best_ask_quantity,
                 raw={"response_code": response_code},
             )
 

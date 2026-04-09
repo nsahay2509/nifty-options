@@ -1,9 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime
+import csv
+import json
+from datetime import date, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from scripts.run_paper_live_eval import TradeStateGate
+from scripts.run_paper_live_eval import (
+    TradeStateGate,
+    _load_recent_underlying_price,
+    build_option_subscription_basket,
+)
 from scripts.run_research import evaluate_completed_candles
 from scripts.schema import Candle, MarketInstrument
 
@@ -86,3 +93,48 @@ def test_trade_state_gate_exits_after_three_non_matching_states_even_without_new
     assert mixed_2.action == "hold"
     assert mixed_3.action == "exit"
     assert mixed_3.active_state == ""
+
+
+def test_build_option_subscription_basket_targets_single_expected_expiry(monkeypatch) -> None:
+    calls: list[tuple[float, str, int]] = []
+
+    def fake_resolve(*, center_price: float, expiry_hint: str, as_of: date, breadth_steps: int):
+        calls.append((center_price, expiry_hint, breadth_steps))
+        return [
+            MarketInstrument(
+                name=f"{expiry_hint}-instrument",
+                exchange_segment="NSE_FNO",
+                security_id="202",
+                instrument_type="OPTION",
+            )
+        ]
+
+    monkeypatch.setattr("scripts.run_paper_live_eval.resolve_nifty_option_basket", fake_resolve)
+
+    instruments = build_option_subscription_basket(center_price=23950.0, as_of=date(2026, 4, 8), prior_day_candles=[])
+
+    assert calls == [(23950.0, "next_week", 10)]
+    assert [instrument.security_id for instrument in instruments] == ["202"]
+
+
+def test_load_recent_underlying_price_prefers_latest_historical_record_when_session_has_no_data(
+    tmp_path: Path, monkeypatch
+) -> None:
+    data_dir = tmp_path / "data"
+    records_dir = data_dir / "records"
+    records_dir.mkdir(parents=True)
+
+    current_session = records_dir / "trade_records_2026-04-09.csv"
+    with current_session.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=["underlying_context"])
+        writer.writeheader()
+
+    previous_session = records_dir / "trade_records_2026-04-08.csv"
+    with previous_session.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=["underlying_context"])
+        writer.writeheader()
+        writer.writerow({"underlying_context": json.dumps({"underlying_price": 23956.1})})
+
+    monkeypatch.setattr("scripts.run_paper_live_eval.DATA_DIR", data_dir)
+
+    assert _load_recent_underlying_price(session_date=date(2026, 4, 9)) == 23956.1

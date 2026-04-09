@@ -44,6 +44,11 @@ class TickStore:
             "day_open": tick.day_open,
             "day_high": tick.day_high,
             "day_low": tick.day_low,
+            "prev_close": tick.prev_close,
+            "best_bid_price": tick.best_bid_price,
+            "best_ask_price": tick.best_ask_price,
+            "best_bid_quantity": tick.best_bid_quantity,
+            "best_ask_quantity": tick.best_ask_quantity,
         }
         with target.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload) + "\n")
