@@ -5,6 +5,7 @@ import csv
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -22,6 +23,8 @@ DEFAULT_PORT = int(os.getenv("MONITOR_PORT", "8010"))
 FRESHNESS_SEC = int(os.getenv("MONITOR_FRESHNESS_SEC", "180"))
 FAVICON_PATH = BASE_DIR / "static" / "favicon.ico"
 RUNTIME_LOG_PATH = APP_CONFIG.logging.file
+AUTO_PAPER_SYSTEMD_UNIT = os.getenv("NIFTY_AUTO_PAPER_UNIT", "nifty-auto-paper.service")
+MONITOR_SYSTEMD_UNIT = os.getenv("NIFTY_MONITOR_UNIT", "nifty-monitor.service")
 
 
 def load_json(path: Path, default):
@@ -133,6 +136,7 @@ def load_runtime_heartbeat(log_path: Path | None = None) -> dict[str, object]:
         "run_paper_live_eval | INFO | PAPER_EVAL_RESULT",
         "run_paper_live_eval | INFO | PAPER_EVAL_GATE",
         "run_paper_live_eval | INFO | PAPER_EVAL_START",
+        "run_paper_live_eval | INFO | PAPER_EVAL_HEARTBEAT",
         "run_paper_live_eval | INFO | PAPER_EVAL_RECORDED",
         "run_paper_live_eval | INFO | PAPER_EVAL_CLOSE_RECORDED",
     )
@@ -162,6 +166,64 @@ def load_runtime_heartbeat(log_path: Path | None = None) -> dict[str, object]:
         }
 
     return fallback
+
+
+def get_systemd_unit_state(unit_name: str) -> dict[str, object]:
+    fallback = {
+        "unit": unit_name,
+        "active_state": "unknown",
+        "sub_state": "",
+        "load_state": "",
+        "unit_file_state": "",
+        "running": None,
+        "available": False,
+    }
+    if not unit_name:
+        return fallback
+
+    try:
+        result = subprocess.run(
+            [
+                "systemctl",
+                "show",
+                unit_name,
+                "--property=ActiveState,SubState,LoadState,UnitFileState",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=1.0,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError, OSError):
+        return fallback
+
+    properties: dict[str, str] = {}
+    for raw_line in result.stdout.splitlines():
+        line = raw_line.strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        properties[key] = value.strip()
+
+    active_state = properties.get("ActiveState", "")
+    sub_state = properties.get("SubState", "")
+    load_state = properties.get("LoadState", "")
+    unit_file_state = properties.get("UnitFileState", "")
+    if not any([active_state, sub_state, load_state, unit_file_state]):
+        return fallback
+    running = active_state in {"active", "activating", "reloading"}
+    if load_state == "not-found":
+        running = False
+
+    return {
+        "unit": unit_name,
+        "active_state": active_state or "unknown",
+        "sub_state": sub_state,
+        "load_state": load_state,
+        "unit_file_state": unit_file_state,
+        "running": running,
+        "available": True,
+    }
 
 
 def load_latest_gate_status(log_path: Path | None = None) -> dict[str, object]:
@@ -671,6 +733,8 @@ def build_dashboard_payload(data_dir: Path = DEFAULT_DATA_DIR) -> dict:
     now_ts = datetime.now(timezone.utc).timestamp()
     data_is_fresh = bool(last_update_ts and (now_ts - last_update_ts) <= FRESHNESS_SEC)
     runtime_heartbeat = load_runtime_heartbeat()
+    runtime_service = get_systemd_unit_state(AUTO_PAPER_SYSTEMD_UNIT)
+    monitor_service = get_systemd_unit_state(MONITOR_SYSTEMD_UNIT)
     runtime_heartbeat_ts = runtime_heartbeat.get("timestamp")
     runtime_is_fresh = bool(runtime_heartbeat_ts and (now_ts - float(runtime_heartbeat_ts)) <= FRESHNESS_SEC)
     is_fresh = bool(data_is_fresh or runtime_is_fresh)
@@ -767,7 +831,15 @@ def build_dashboard_payload(data_dir: Path = DEFAULT_DATA_DIR) -> dict:
         session_closed_count = live_mtm_closed_count or session_closed_count
 
     market_phase = calendar.classify_timestamp()
-    runtime_status = "LIVE" if is_fresh else ("STALE" if market_phase == "open" else "STOPPED")
+    runtime_service_running = runtime_service.get("running")
+    if is_fresh:
+        runtime_status = "LIVE"
+    elif runtime_service_running is True:
+        runtime_status = "STALE"
+    elif runtime_service_running is False:
+        runtime_status = "STOPPED"
+    else:
+        runtime_status = "STALE" if market_phase == "open" else "STOPPED"
 
     if live_mtm_enabled:
         strip_status = "OPEN"
@@ -814,6 +886,10 @@ def build_dashboard_payload(data_dir: Path = DEFAULT_DATA_DIR) -> dict:
         alerts.append(
             f"Dashboard updates are stale. Last runtime update: {format_display_timestamp(last_update_iso) if last_update_iso else '-'}"
         )
+    if runtime_service_running is True and not is_fresh:
+        alerts.append("The auto-paper service is still running in systemd, but fresh runtime updates have paused.")
+    elif runtime_service_running is False:
+        alerts.append("The auto-paper systemd service is not active right now.")
     if pending_trade_active:
         alerts.append("A trade has been entered and is waiting for option prices before live P&L can be shown.")
     elif not trade_happening_now:
@@ -873,6 +949,12 @@ def build_dashboard_payload(data_dir: Path = DEFAULT_DATA_DIR) -> dict:
             "runtime_running": is_fresh,
             "paper_eval_running": is_fresh,
             "runtime_status": runtime_status,
+            "runtime_service_name": str(runtime_service.get("unit", AUTO_PAPER_SYSTEMD_UNIT)),
+            "runtime_service_running": runtime_service_running,
+            "runtime_service_state": str(runtime_service.get("active_state", "unknown") or "unknown").upper(),
+            "monitor_service_name": str(monitor_service.get("unit", MONITOR_SYSTEMD_UNIT)),
+            "monitor_service_running": monitor_service.get("running"),
+            "monitor_service_state": str(monitor_service.get("active_state", "unknown") or "unknown").upper(),
             "last_update": last_update_iso,
             "last_update_display": format_display_timestamp(last_update_iso),
             "data_last_update": datetime.fromtimestamp(last_update_ts, tz=timezone.utc).astimezone().isoformat() if last_update_ts else "",
@@ -1407,6 +1489,9 @@ def render_index() -> str:
       const modeLabel = (data.status.mode || '-').toUpperCase();
       const runtimeStatus = pretty(data.status.runtime_status, runtimeRunning ? 'LIVE' : 'STOPPED');
       const runtimeTone = runtimeStatus === 'LIVE' ? 'ok' : (runtimeStatus === 'STALE' ? 'warn' : 'bad');
+      const runtimeServiceState = pretty(data.status.runtime_service_state, 'UNKNOWN');
+      const runtimeServiceRunning = data.status.runtime_service_running;
+      const runtimeServiceTone = runtimeServiceRunning === true ? 'ok' : (runtimeServiceRunning === false ? 'bad' : 'neutral');
       const currentState = pretty(data.headline.current_state, 'Waiting');
       const currentIdea = pretty(data.headline.display_current_playbook, 'Waiting');
       const tradeStatus = pretty(data.headline.status_text, 'Watching');
@@ -1416,6 +1501,7 @@ def render_index() -> str:
         `<div class=\"status-row\"><strong>Date:</strong> ${pretty(data.session_date)} ${runtimeStatus === 'LIVE' ? '<span class=\"ok\">(Trading Day)</span>' : ''}</div>`,
         `<div class=\"status-row\"><strong>Time:</strong> ${pretty(data.status.clock_display, '-')}</div>`,
         `<div class=\"status-row\"><strong>System:</strong> ${pill(runtimeStatus, runtimeTone)}</div>`,
+        `<div class=\"status-row\"><strong>Auto-paper service:</strong> ${pill(runtimeServiceState, runtimeServiceTone)}</div>`,
         `<div class=\"status-row\"><strong>Market:</strong> ${currentState}</div>`,
         `<div class=\"status-row\"><strong>Idea:</strong> ${currentIdea}</div>`,
         `<div class=\"status-row\"><strong>Session status:</strong> ${tradeStatus}</div>`,

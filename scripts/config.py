@@ -54,7 +54,7 @@ class TradingConfig:
     # Consecutive 1-minute assessments required before entering/exiting on a state.
     # Current behavior clamps values below 1 up to 1, so 0 behaves the same as 1.
     entry_confirmations_required: int = 1
-    exit_confirmations_required: int = 3
+    exit_confirmations_required: int = 1
 
 
 @dataclass(frozen=True)

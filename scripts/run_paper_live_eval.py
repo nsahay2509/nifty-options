@@ -8,6 +8,7 @@ import json
 import os
 import signal
 import sys
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -27,6 +28,7 @@ from scripts.run_research import evaluate_completed_candles
 from scripts.runtime_controller import RuntimeController
 from scripts.session_loader import load_prior_day_index_candles
 from scripts.trade_recorder import TradeRecorder
+from scripts.schema import Candle, MarketTick
 
 if __package__ in {None, ""}:
     from scripts.brokers.credentials import load_dhan_credentials
@@ -138,6 +140,104 @@ class TradeStateGate:
             candidate_state=self._candidate_state,
             candidate_count=self._candidate_count,
             reason=f"confirmed_exit_from:{previous_state}",
+        )
+
+
+class StreamHealthMonitor:
+    """Track which parts of the live feed are moving so stalls are easier to diagnose."""
+
+    def __init__(
+        self,
+        *,
+        stall_after_seconds: int = 90,
+        warn_repeat_seconds: int = 120,
+        log_every_ticks: int = 5000,
+    ) -> None:
+        self.stall_after_seconds = max(int(stall_after_seconds), 1)
+        self.warn_repeat_seconds = max(int(warn_repeat_seconds), 1)
+        self.log_every_ticks = max(int(log_every_ticks), 1)
+        self.tick_counts = {"INDEX": 0, "FUTURES": 0, "OPTION": 0, "OTHER": 0}
+        self.candle_counts = {"INDEX": 0, "FUTURES": 0, "OPTION": 0, "OTHER": 0}
+        self.last_tick_at = {"INDEX": None, "FUTURES": None, "OPTION": None, "OTHER": None}
+        self._last_health_log_at_tick = 0
+        self._last_index_stall_warning_at = None
+
+    @staticmethod
+    def _bucket(instrument_type: str) -> str:
+        if instrument_type == "INDEX":
+            return "INDEX"
+        if instrument_type == "FUTURES":
+            return "FUTURES"
+        if instrument_type == "OPTION":
+            return "OPTION"
+        return "OTHER"
+
+    @staticmethod
+    def _display_timestamp(value) -> str:
+        return value.isoformat() if value is not None else "-"
+
+    def observe_tick(self, tick: MarketTick) -> None:
+        bucket = self._bucket(tick.instrument.instrument_type)
+        self.tick_counts[bucket] += 1
+        self.last_tick_at[bucket] = tick.timestamp
+
+    def observe_candle(self, candle: Candle) -> None:
+        bucket = self._bucket(candle.instrument.instrument_type)
+        self.candle_counts[bucket] += 1
+
+    def maybe_log(self, *, tick_counter: int, decision_counter: int, current_tick: MarketTick) -> None:
+        if tick_counter == 1 or tick_counter - self._last_health_log_at_tick >= self.log_every_ticks:
+            self._last_health_log_at_tick = tick_counter
+            logger.info(
+                "PAPER_EVAL_STREAM_HEALTH | ticks=%s decisions=%s index_ticks=%s futures_ticks=%s option_ticks=%s other_ticks=%s index_candles=%s futures_candles=%s option_candles=%s other_candles=%s last_index_tick=%s last_futures_tick=%s last_option_tick=%s last_other_tick=%s",
+                tick_counter,
+                decision_counter,
+                self.tick_counts["INDEX"],
+                self.tick_counts["FUTURES"],
+                self.tick_counts["OPTION"],
+                self.tick_counts["OTHER"],
+                self.candle_counts["INDEX"],
+                self.candle_counts["FUTURES"],
+                self.candle_counts["OPTION"],
+                self.candle_counts["OTHER"],
+                self._display_timestamp(self.last_tick_at["INDEX"]),
+                self._display_timestamp(self.last_tick_at["FUTURES"]),
+                self._display_timestamp(self.last_tick_at["OPTION"]),
+                self._display_timestamp(self.last_tick_at["OTHER"]),
+            )
+
+        current_time = current_tick.timestamp
+        last_index_tick_at = self.last_tick_at["INDEX"]
+        non_index_ticks = self.tick_counts["FUTURES"] + self.tick_counts["OPTION"] + self.tick_counts["OTHER"]
+        if non_index_ticks <= 0:
+            return
+
+        if last_index_tick_at is None:
+            missing_for_seconds = 0.0
+        else:
+            missing_for_seconds = (current_time - last_index_tick_at).total_seconds()
+
+        should_warn = last_index_tick_at is None or missing_for_seconds >= self.stall_after_seconds
+        if not should_warn:
+            return
+
+        last_warning_at = self._last_index_stall_warning_at
+        if last_warning_at is not None and (current_time - last_warning_at).total_seconds() < self.warn_repeat_seconds:
+            return
+
+        self._last_index_stall_warning_at = current_time
+        logger.warning(
+            "PAPER_EVAL_INDEX_STALLED | ticks=%s decisions=%s missing_for_seconds=%.1f index_ticks=%s futures_ticks=%s option_ticks=%s other_ticks=%s last_index_tick=%s current_tick_instrument=%s current_tick_timestamp=%s",
+            tick_counter,
+            decision_counter,
+            missing_for_seconds,
+            self.tick_counts["INDEX"],
+            self.tick_counts["FUTURES"],
+            self.tick_counts["OPTION"],
+            self.tick_counts["OTHER"],
+            self._display_timestamp(last_index_tick_at),
+            current_tick.instrument.name,
+            current_time.isoformat(),
         )
 
 
@@ -325,6 +425,7 @@ async def main(*, stop_event: asyncio.Event | None = None, install_signal_handle
         entry_confirmations_required=APP_CONFIG.trading.entry_confirmations_required,
         exit_confirmations_required=APP_CONFIG.trading.exit_confirmations_required,
     )
+    stream_health = StreamHealthMonitor()
     stop_event = stop_event or asyncio.Event()
     shutdown_reason = "session_end"
 
@@ -350,6 +451,7 @@ async def main(*, stop_event: asyncio.Event | None = None, install_signal_handle
     decision_counter = 0
     max_ticks = int(os.getenv("PAPER_EVAL_MAX_TICKS", "0"))
     max_decisions = int(os.getenv("PAPER_EVAL_MAX_DECISIONS", "0"))
+    heartbeat_interval_seconds = max(float(os.getenv("PAPER_EVAL_HEARTBEAT_SECONDS", "30")), 5.0)
     session_file = None
 
     def record_result(candle, result) -> None:
@@ -450,8 +552,11 @@ async def main(*, stop_event: asyncio.Event | None = None, install_signal_handle
 
         tick_counter += 1
         mtm_tracker.on_tick(tick)
+        stream_health.observe_tick(tick)
+        stream_health.maybe_log(tick_counter=tick_counter, decision_counter=decision_counter, current_tick=tick)
         completed = market_data.handle_tick(tick)
         for candle in completed:
+            stream_health.observe_candle(candle)
             if candle.interval_min != 1:
                 continue
             if candle.instrument.instrument_type == "INDEX":
@@ -476,11 +581,29 @@ async def main(*, stop_event: asyncio.Event | None = None, install_signal_handle
             return False
         return True
 
-    await controller.consume_stream(
-        feed.stream(instruments),
-        handle_tick,
-        item_name="paper_eval_tick",
-    )
+    async def emit_heartbeat() -> None:
+        while not stop_event.is_set():
+            await asyncio.sleep(heartbeat_interval_seconds)
+            if stop_event.is_set():
+                break
+            logger.info(
+                "PAPER_EVAL_HEARTBEAT | ticks=%s decisions=%s",
+                tick_counter,
+                decision_counter,
+            )
+
+    heartbeat_task = asyncio.create_task(emit_heartbeat())
+    try:
+        await controller.consume_stream(
+            feed.stream(instruments),
+            handle_tick,
+            item_name="paper_eval_tick",
+        )
+    finally:
+        heartbeat_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await heartbeat_task
+
     post_run_decision = controller.evaluate()
     if post_run_decision.should_run:
         mtm_tracker.preserve_active_position(reason="Active paper trade preserved for in-session restart.")

@@ -6,13 +6,9 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from scripts.run_paper_live_eval import (
-    TradeStateGate,
-    _load_recent_underlying_price,
-    build_option_subscription_basket,
-)
+from scripts.run_paper_live_eval import TradeStateGate, StreamHealthMonitor, _load_recent_underlying_price, build_option_subscription_basket
 from scripts.run_research import evaluate_completed_candles
-from scripts.schema import Candle, MarketInstrument
+from scripts.schema import Candle, MarketInstrument, MarketTick
 
 
 TZ = ZoneInfo("Asia/Kolkata")
@@ -138,3 +134,32 @@ def test_load_recent_underlying_price_prefers_latest_historical_record_when_sess
     monkeypatch.setattr("scripts.run_paper_live_eval.DATA_DIR", data_dir)
 
     assert _load_recent_underlying_price(session_date=date(2026, 4, 9)) == 23956.1
+
+
+def test_stream_health_monitor_warns_when_index_ticks_stop(caplog) -> None:
+    monitor = StreamHealthMonitor(stall_after_seconds=90, warn_repeat_seconds=120, log_every_ticks=10_000)
+    option = MarketInstrument(
+        name="NIFTY 26 MAY 23850 PUT",
+        exchange_segment="NSE_FNO",
+        security_id="72174",
+        instrument_type="OPTION",
+    )
+
+    index_tick = MarketTick(
+        instrument=INDEX,
+        timestamp=datetime(2026, 4, 9, 10, 27, 0, tzinfo=TZ),
+        ltp=23830.0,
+    )
+    option_tick = MarketTick(
+        instrument=option,
+        timestamp=datetime(2026, 4, 9, 10, 28, 31, tzinfo=TZ),
+        ltp=537.0,
+    )
+
+    with caplog.at_level("WARNING"):
+        monitor.observe_tick(index_tick)
+        monitor.observe_tick(option_tick)
+        monitor.maybe_log(tick_counter=2, decision_counter=6, current_tick=option_tick)
+
+    assert "PAPER_EVAL_INDEX_STALLED" in caplog.text
+    assert "missing_for_seconds=91.0" in caplog.text

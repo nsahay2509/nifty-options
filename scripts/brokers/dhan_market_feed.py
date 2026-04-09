@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import struct
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
@@ -39,6 +40,104 @@ REQUEST_CODE_BY_MODE = {
 }
 
 
+@dataclass(frozen=True)
+class WatchdogAction:
+    action: str
+    security_ids: tuple[str, ...] = ()
+    reason: str = ""
+
+
+class SubscriptionWatchdog:
+    """Detect stale subscriptions and recommend resubscribe or reconnect actions."""
+
+    def __init__(
+        self,
+        *,
+        critical_security_ids: set[str],
+        stall_after_seconds: float = 90.0,
+        resubscribe_cooldown_seconds: float = 30.0,
+        reconnect_after_resubscribe_attempts: int = 2,
+        reconnect_on_total_silence_seconds: float = 45.0,
+    ) -> None:
+        self.critical_security_ids = set(critical_security_ids)
+        self.stall_after_seconds = max(float(stall_after_seconds), 1.0)
+        self.resubscribe_cooldown_seconds = max(float(resubscribe_cooldown_seconds), 1.0)
+        self.reconnect_after_resubscribe_attempts = max(int(reconnect_after_resubscribe_attempts), 1)
+        self.reconnect_on_total_silence_seconds = max(float(reconnect_on_total_silence_seconds), 1.0)
+        self.connected_at = 0.0
+        self.last_seen_at: dict[str, float] = {}
+        self.last_resubscribe_at: dict[str, float] = {}
+        self.resubscribe_attempts: dict[str, int] = {}
+
+    def reset(self, *, connected_at: float, security_ids: list[str]) -> None:
+        self.connected_at = connected_at
+        self.last_seen_at = {}
+        self.last_resubscribe_at = {security_id: connected_at for security_id in security_ids}
+        self.resubscribe_attempts = {security_id: 0 for security_id in security_ids}
+
+    def observe_tick(self, security_id: str, *, now_monotonic: float) -> None:
+        self.last_seen_at[security_id] = now_monotonic
+        self.resubscribe_attempts[security_id] = 0
+
+    def mark_resubscribe(self, security_ids: list[str], *, now_monotonic: float) -> None:
+        for security_id in security_ids:
+            self.last_resubscribe_at[security_id] = now_monotonic
+            self.resubscribe_attempts[security_id] = self.resubscribe_attempts.get(security_id, 0) + 1
+
+    def evaluate(self, *, now_monotonic: float, all_security_ids: list[str]) -> WatchdogAction:
+        last_seen_values = [self.last_seen_at.get(security_id) for security_id in all_security_ids]
+        seen_values = [value for value in last_seen_values if value is not None]
+        if seen_values:
+            latest_seen = max(seen_values)
+            if now_monotonic - latest_seen >= self.reconnect_on_total_silence_seconds:
+                return WatchdogAction(action="reconnect", reason="all_subscriptions_silent")
+        elif now_monotonic - self.connected_at >= self.reconnect_on_total_silence_seconds:
+            return WatchdogAction(action="reconnect", reason="no_ticks_after_connect")
+
+        stale_critical: list[str] = []
+        fresh_non_stale_exists = False
+        for security_id in all_security_ids:
+            last_seen_at = self.last_seen_at.get(security_id)
+            if last_seen_at is None:
+                stale = now_monotonic - self.connected_at >= self.stall_after_seconds
+            else:
+                stale = now_monotonic - last_seen_at >= self.stall_after_seconds
+            if stale and security_id in self.critical_security_ids:
+                stale_critical.append(security_id)
+            elif not stale and last_seen_at is not None:
+                fresh_non_stale_exists = True
+
+        if not stale_critical or not fresh_non_stale_exists:
+            return WatchdogAction(action="none")
+
+        ready_to_resubscribe = [
+            security_id
+            for security_id in stale_critical
+            if now_monotonic - self.last_resubscribe_at.get(security_id, self.connected_at)
+            >= self.resubscribe_cooldown_seconds
+        ]
+        if not ready_to_resubscribe:
+            return WatchdogAction(action="none")
+
+        exhausted = [
+            security_id
+            for security_id in ready_to_resubscribe
+            if self.resubscribe_attempts.get(security_id, 0) >= self.reconnect_after_resubscribe_attempts
+        ]
+        if exhausted:
+            return WatchdogAction(
+                action="reconnect",
+                security_ids=tuple(exhausted),
+                reason="critical_subscription_unrecovered",
+            )
+
+        return WatchdogAction(
+            action="resubscribe",
+            security_ids=tuple(ready_to_resubscribe),
+            reason="critical_subscription_stalled",
+        )
+
+
 class DhanMarketFeed:
     """Thin websocket client that normalizes Dhan market feed into MarketTick objects."""
 
@@ -47,11 +146,23 @@ class DhanMarketFeed:
         credentials: BrokerCredentials,
         *,
         mode: MarketFeedMode | None = None,
+        watchdog_poll_seconds: float = 5.0,
+        stall_after_seconds: float = 90.0,
+        resubscribe_cooldown_seconds: float = 30.0,
+        reconnect_after_resubscribe_attempts: int = 2,
+        reconnect_on_total_silence_seconds: float = 45.0,
+        reconnect_delay_seconds: float = 3.0,
     ) -> None:
         self.credentials = credentials
         self.mode = mode or APP_CONFIG.market_data.base_feed_mode
         self.market_timezone = ZoneInfo(APP_CONFIG.session.market_timezone)
         self.logger = get_logger("brokers.dhan_feed")
+        self.watchdog_poll_seconds = max(float(watchdog_poll_seconds), 1.0)
+        self.reconnect_delay_seconds = max(float(reconnect_delay_seconds), 0.5)
+        self.stall_after_seconds = max(float(stall_after_seconds), 1.0)
+        self.resubscribe_cooldown_seconds = max(float(resubscribe_cooldown_seconds), 1.0)
+        self.reconnect_after_resubscribe_attempts = max(int(reconnect_after_resubscribe_attempts), 1)
+        self.reconnect_on_total_silence_seconds = max(float(reconnect_on_total_silence_seconds), 1.0)
 
     def _decode_timestamp(self, ltt_epoch: int) -> datetime:
         """Normalize Dhan's LTT field into the configured market timezone.
@@ -80,23 +191,118 @@ class DhanMarketFeed:
             raise RuntimeError("websockets package is required to use DhanMarketFeed")
 
         instrument_map = {inst.security_id: inst for inst in instruments}
-        async with websockets.connect(self.websocket_url(), ping_interval=10, ping_timeout=40) as ws:
-            await ws.send(self._subscription_message(instruments))
-            self.logger.info("MARKET_FEED_CONNECTED | instruments=%s mode=%s", len(instruments), self.mode.value)
+        loop = asyncio.get_running_loop()
+        critical_security_ids = {
+            instrument.security_id
+            for instrument in instruments
+            if instrument.instrument_type in {"INDEX", "FUTURES"}
+        }
+        watchdog = SubscriptionWatchdog(
+            critical_security_ids=critical_security_ids,
+            stall_after_seconds=self.stall_after_seconds,
+            resubscribe_cooldown_seconds=self.resubscribe_cooldown_seconds,
+            reconnect_after_resubscribe_attempts=self.reconnect_after_resubscribe_attempts,
+            reconnect_on_total_silence_seconds=self.reconnect_on_total_silence_seconds,
+        )
+        all_security_ids = [instrument.security_id for instrument in instruments]
 
-            while True:
-                raw = await ws.recv()
-                if isinstance(raw, str):
-                    self.logger.info("MARKET_FEED_TEXT | payload=%s", raw)
-                    continue
+        while True:
+            try:
+                async with websockets.connect(self.websocket_url(), ping_interval=10, ping_timeout=40) as ws:
+                    connected_at = loop.time()
+                    watchdog.reset(connected_at=connected_at, security_ids=all_security_ids)
+                    for subscription_payload in self._subscription_messages(instruments):
+                        await ws.send(subscription_payload)
+                    self.logger.info("MARKET_FEED_CONNECTED | instruments=%s mode=%s", len(instruments), self.mode.value)
+                    next_watchdog_check_at = connected_at + self.watchdog_poll_seconds
 
-                tick = self._parse_binary(raw, instrument_map)
-                if tick is not None:
-                    yield tick
+                    async def run_watchdog(now_monotonic: float) -> bool:
+                        action = watchdog.evaluate(now_monotonic=now_monotonic, all_security_ids=all_security_ids)
+                        if action.action == "resubscribe":
+                            target_instruments = [
+                                instrument_map[security_id]
+                                for security_id in action.security_ids
+                                if security_id in instrument_map
+                            ]
+                            if target_instruments:
+                                for subscription_payload in self._subscription_messages(target_instruments):
+                                    await ws.send(subscription_payload)
+                                watchdog.mark_resubscribe(
+                                    [instrument.security_id for instrument in target_instruments],
+                                    now_monotonic=loop.time(),
+                                )
+                                self.logger.warning(
+                                    "MARKET_FEED_RESUBSCRIBE | reason=%s security_ids=%s instruments=%s",
+                                    action.reason,
+                                    ",".join(action.security_ids),
+                                    ",".join(instrument.name for instrument in target_instruments),
+                                )
+                            return False
+                        if action.action == "reconnect":
+                            self.logger.warning(
+                                "MARKET_FEED_RECONNECT | reason=%s security_ids=%s",
+                                action.reason,
+                                ",".join(action.security_ids),
+                            )
+                            return True
+                        return False
+
+                    while True:
+                        try:
+                            raw = await asyncio.wait_for(ws.recv(), timeout=self.watchdog_poll_seconds)
+                        except asyncio.TimeoutError:
+                            if await run_watchdog(loop.time()):
+                                break
+                            next_watchdog_check_at = loop.time() + self.watchdog_poll_seconds
+                            continue
+
+                        if isinstance(raw, str):
+                            self.logger.info("MARKET_FEED_TEXT | payload=%s", raw)
+                            now_monotonic = loop.time()
+                            if now_monotonic >= next_watchdog_check_at:
+                                if await run_watchdog(now_monotonic):
+                                    break
+                                next_watchdog_check_at = now_monotonic + self.watchdog_poll_seconds
+                            continue
+
+                        tick = self._parse_binary(raw, instrument_map)
+                        if tick is not None:
+                            watchdog.observe_tick(tick.instrument.security_id, now_monotonic=loop.time())
+                            now_monotonic = loop.time()
+                            if now_monotonic >= next_watchdog_check_at:
+                                if await run_watchdog(now_monotonic):
+                                    break
+                                next_watchdog_check_at = now_monotonic + self.watchdog_poll_seconds
+                            yield tick
+            except Exception as exc:
+                self.logger.warning("MARKET_FEED_CONNECTION_ERROR | reason=%s", exc)
+
+            self.logger.info("MARKET_FEED_RECONNECT_DELAY | seconds=%.1f", self.reconnect_delay_seconds)
+            await asyncio.sleep(self.reconnect_delay_seconds)
 
     def _subscription_message(self, instruments: list[MarketInstrument]) -> str:
+        return self._subscription_message_for_mode(instruments, mode=self.mode)
+
+    def _mode_for_instrument(self, instrument: MarketInstrument) -> MarketFeedMode:
+        # Dhan can omit index packets in FULL mode; keep index on QUOTE for reliability.
+        if self.mode == MarketFeedMode.FULL and instrument.instrument_type == "INDEX":
+            return MarketFeedMode.QUOTE
+        return self.mode
+
+    def _subscription_messages(self, instruments: list[MarketInstrument]) -> list[str]:
+        grouped: dict[MarketFeedMode, list[MarketInstrument]] = {}
+        for instrument in instruments:
+            mode = self._mode_for_instrument(instrument)
+            grouped.setdefault(mode, []).append(instrument)
+        return [
+            self._subscription_message_for_mode(grouped_instruments, mode=mode)
+            for mode, grouped_instruments in grouped.items()
+            if grouped_instruments
+        ]
+
+    def _subscription_message_for_mode(self, instruments: list[MarketInstrument], *, mode: MarketFeedMode) -> str:
         payload = {
-            "RequestCode": REQUEST_CODE_BY_MODE[self.mode],
+            "RequestCode": REQUEST_CODE_BY_MODE[mode],
             "InstrumentCount": len(instruments),
             "InstrumentList": [
                 {

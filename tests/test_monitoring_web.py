@@ -118,6 +118,8 @@ def test_build_dashboard_payload_reads_latest_summary_and_records(tmp_path: Path
     assert payload["pnl_status"]["mode"] == "signal_only"
     assert payload["ops"]["control_mode"] == "terminal_or_systemd"
     assert payload["ops"]["public_controls_enabled"] is False
+    assert payload["status"]["runtime_service_name"] == monitoring_web.AUTO_PAPER_SYSTEMD_UNIT
+    assert payload["status"]["runtime_service_state"] in {"UNKNOWN", "ACTIVE", "INACTIVE", "FAILED", "ACTIVATING"}
 
 
 def test_build_dashboard_payload_reads_live_mtm_file_when_present(tmp_path: Path) -> None:
@@ -386,6 +388,53 @@ def test_build_dashboard_payload_uses_runtime_heartbeat_to_avoid_false_stale(tmp
     assert payload["status"]["runtime_status"] == "LIVE"
     assert payload["headline"]["status_text"] == "Watching for setup"
     assert payload["trade_strip"]["status"] == "WATCHING"
+
+
+def test_build_dashboard_payload_marks_service_backed_runtime_as_stale_not_stopped(tmp_path: Path, monkeypatch) -> None:
+    reports_dir = tmp_path / "reports"
+    records_dir = tmp_path / "records"
+    reports_dir.mkdir(parents=True)
+    records_dir.mkdir(parents=True)
+
+    summary_path = reports_dir / "trade_summary_2026-04-08.json"
+    summary_path.write_text(
+        json.dumps(
+            {
+                "session_date": "2026-04-08",
+                "total_trades": 0,
+                "gross_pnl": 0.0,
+                "fees_and_costs": 0.0,
+                "net_pnl": 0.0,
+                "by_state": {},
+                "by_playbook": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    stale_ts = time.time() - 600
+    os.utime(summary_path, (stale_ts, stale_ts))
+
+    monkeypatch.setattr(
+        monitoring_web,
+        "get_systemd_unit_state",
+        lambda unit_name: {
+            "unit": unit_name,
+            "active_state": "active",
+            "sub_state": "running",
+            "load_state": "loaded",
+            "unit_file_state": "enabled",
+            "running": True,
+            "available": True,
+        },
+    )
+    monkeypatch.setattr(monitoring_web, "RUNTIME_LOG_PATH", tmp_path / "missing_runtime.log")
+
+    payload = build_dashboard_payload(tmp_path)
+
+    assert payload["status"]["runtime_status"] == "STALE"
+    assert payload["status"]["runtime_service_running"] is True
+    assert payload["status"]["runtime_service_state"] == "ACTIVE"
+    assert any("still running in systemd" in alert for alert in payload["alerts"])
 
 
 def test_build_dashboard_payload_hides_inconsistent_carried_totals_even_when_live_mtm_session_matches(tmp_path: Path, monkeypatch) -> None:
